@@ -1,17 +1,23 @@
 var setup            = require('./bot_setup.js');
 
 var Botkit           = require('botkit');
-var Spotify          = require('spotify-node-applescript');
+var request          = require('request');
 var SpotifyWebApi    = require('spotify-web-api-node');
+var Spotify          = require('spotify-node-applescript');
 
-var https            = require('https');
-var os               = require('os');
 var q                = require('q');
+var os               = require('os');
+var https            = require('https');
 
 var lastTrackId;
 var channelId;
 
+var clientId = setup.spotifyClientId;
+var clientSecret = setup.spotifyClientSecret;
+var redirectUri = 'http://dev.tylershambora.com/music';
+var scopes = ['playlist-read-private', 'playlist-modify', 'playlist-modify-private'];
 var playlistId = '14KDKEQGjVcdTzJrswI6Zm';
+
 
 var controller = Botkit.slackbot({
     debug: false,
@@ -23,17 +29,19 @@ var bot = controller.spawn({
 
 
 var spotifyApi = new SpotifyWebApi({
-  'clientId': setup.spotifyClientId,
-  'clientSecret': setup.spotifyClientSecret,
-  'redirectUri': 'http://dev.tylershambora.com/music'
+  redirectUri : redirectUri,
+  clientId : clientId,
+  clientSecret : clientSecret
 });
+
+var authorizationCode = 'AQDZL5dfGNMupmuJmLThiIkzkiNK_veLQ8meZE-jhBqQoUBdF1RgLNuyIYS36ZEtTlW4oM37-OEBOROmaLnnN3T4kh2XGW5XcLz6s4AMO9ZcIxb8TkKikMhjNv0VPF6qF_kQUw9kuxEAGl7j9BdQAMf2siOQzNaam8QBx5jUqEAbquNUkSl8zHtX3NEEYwdoM-PEvSL-vXYuNCUJy-MbfCVFo9gMAw6zTXx3uN75F637bQMy-mM32Wb-8oEKHhbVVYKhtDuY7_dmkVj_Y_UhbnO8nxuF9hqy0Q';
 
 
 // When our access token will expire
 var tokenExpirationEpoch;
 
 // First retrieve an access token
-spotifyApi.authorizationCodeGrant(setup.authorizationCode).then(function(data) {
+spotifyApi.authorizationCodeGrant(authorizationCode).then(function(data) {
   // Set the access token and refresh token
   spotifyApi.setAccessToken(data.body['access_token']);
   spotifyApi.setRefreshToken(data.body['refresh_token']);
@@ -120,11 +128,13 @@ var getRealNameFromId = function(bot, userId) {
 
 // Listeners  ===============================================
 
-controller.hears([/add ([\d\w]*)/], 'direct_message', function(bot, message) {
+controller.hears([/add ([<>:\d\w]*)/], 'direct_message', function(bot, message) {
   var trackId = message.match[1];
-  spotifyApi.getTrack(trackId).then(function(response) {
+  if (trackId.indexOf('spotify:track:') !== -1) {
+    trackId = trackId.slice(15, -1);
+  }
 
-    console.dir();
+  spotifyApi.getTrack(trackId).then(function(response) {
     var albumArtUrl = response.body.album.images[0].url;
     var title = response.body.name;
     var artists = response.body.artists.map(function(artistObj) {
@@ -253,30 +263,6 @@ controller.hears(['detail'],'direct_message,direct_mention,mention', function(bo
         }
     });
 });
-
-
-function inviteMessage(inviter, channel) {
-    Spotify.getTrack(function(err, track){
-        var nowPlaying;
-        var welcomeText = `Thanks for inviting me, ${inviter.name}! Good to be here :)\n`;
-
-        if(track) {
-            lastTrackId = track.id;
-            getArtworkUrlFromTrack(track, function(artworkUrl) {
-                bot.say({
-                    text: welcomeText+'Currently playing: '+trackFormatSimple(track),
-                    channel: channel.id
-                });
-            });
-        }
-        else {
-            bot.say({
-                text: welcomeText+'There is nothing currently playing',
-                channel: channel.id
-            });
-        }
-    });
-}
 
 
 setInterval(() => {

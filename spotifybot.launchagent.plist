@@ -11,7 +11,7 @@
     <key>ProgramArguments</key>
     <array>
       <string>/usr/local/bin/node</string>
-      <string>the-godfather.js</string>
+      <string>mr-dynamite.js</string>
     </array>
 
     <key>StandardOutPath</key>
