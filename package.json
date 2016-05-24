@@ -1,20 +1,21 @@
 {
-  "name": "spotifybot",
+  "name": "the-hardest-working-man-in-showbiz",
   "version": "1.0.0",
-  "description": "A Slack bot to control Spotify",
-  "main": "spotifybot.js",
+  "description": "James Brown playing all you favorite hits",
+  "main": "the-godfather.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Mark Stickley",
-  "license": "ISC",
+  "author": "tsham",
+  "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/markstickley/spotifyslackbot"
+    "url": "https://github.com/tshamz/mr-dynamite"
   },
   "dependencies": {
     "botkit": "^0.0.15",
     "q": "^1.4.1",
-    "spotify-node-applescript": "^0.2.2"
+    "spotify-node-applescript": "^0.2.2",
+    "spotify-web-api-node": "^2.3.0"
   }
 }
