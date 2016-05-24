@@ -1,0 +1,20 @@
+{
+  "name": "spotifybot",
+  "version": "1.0.0",
+  "description": "A Slack bot to control Spotify",
+  "main": "spotifybot.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mark Stickley",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/markstickley/spotifyslackbot"
+  },
+  "dependencies": {
+    "botkit": "^0.0.15",
+    "q": "^1.4.1",
+    "spotify-node-applescript": "^0.2.2"
+  }
+}
