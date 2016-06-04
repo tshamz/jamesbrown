@@ -18,7 +18,6 @@ var redirectUri = 'http://dev.tylershambora.com/music';
 var scopes = ['playlist-read-private', 'playlist-modify', 'playlist-modify-private'];
 var playlistId = '14KDKEQGjVcdTzJrswI6Zm';
 
-
 var controller = Botkit.slackbot({
     debug: false,
 });
@@ -27,22 +26,30 @@ var bot = controller.spawn({
     token: setup.token
 }).startRTM();
 
-
 var spotifyApi = new SpotifyWebApi({
-  redirectUri : redirectUri,
-  clientId : clientId,
-  clientSecret : clientSecret
+  redirectUri: redirectUri,
+  clientId: clientId,
+  clientSecret: clientSecret,
+  accessToken: setup.accessToken,
+  refreshToken: setup.refreshToken
 });
-
-var authorizationCode = 'AQDZL5dfGNMupmuJmLThiIkzkiNK_veLQ8meZE-jhBqQoUBdF1RgLNuyIYS36ZEtTlW4oM37-OEBOROmaLnnN3T4kh2XGW5XcLz6s4AMO9ZcIxb8TkKikMhjNv0VPF6qF_kQUw9kuxEAGl7j9BdQAMf2siOQzNaam8QBx5jUqEAbquNUkSl8zHtX3NEEYwdoM-PEvSL-vXYuNCUJy-MbfCVFo9gMAw6zTXx3uN75F637bQMy-mM32Wb-8oEKHhbVVYKhtDuY7_dmkVj_Y_UhbnO8nxuF9hqy0Q';
-
 
 // When our access token will expire
 var tokenExpirationEpoch;
 
+// spotifyApi.refreshAccessToken().then(function(data) {
+//   tokenExpirationEpoch = (new Date().getTime() / 1000) + data.body['expires_in'];
+// });
+
 // First retrieve an access token
+var authorizationCode = 'AQCk5g4TPcmE-FoXv1_rcFJD2zr6Nu18K2pIfUVALVu3wfAHr1wQy2MgceOgzcjFHvw_hlPi5bzLxdkh9W-YOlmSqTA4AXmqhcsQBG0IRFWIOgYvyB0yOSW3WIYF7HYHqOH7TyIpU4H7rK9NAMdhGDnyGLLdm8MVjTXUMWe2MzETvh7wLo_2bAVo0rjfWHz7cp-hh7QT63XxcRslSrH0x_uNL8-hzuTFSD_oPFKTtN9vXIpPAgmDnezD7NIOgMspLEq_48x5hif44myy1QfnEcEC6AucrLuKIUdm-zCzt4dZ82AXprLOHO7xSiytd3tIyG-ZkykC02nf8CtZjg';
+
 spotifyApi.authorizationCodeGrant(authorizationCode).then(function(data) {
   // Set the access token and refresh token
+
+  console.log('access token: ' + data.body['access_token']);
+  console.log('refresh token: ' + data.body['refresh_token']);
+
   spotifyApi.setAccessToken(data.body['access_token']);
   spotifyApi.setRefreshToken(data.body['refresh_token']);
 
@@ -58,11 +65,13 @@ spotifyApi.authorizationCodeGrant(authorizationCode).then(function(data) {
 var numberOfTimesUpdated = 0;
 
 setInterval(function() {
+  numberOfTimesUpdated = numberOfTimesUpdated + 1;
   console.log('Time left: ' + Math.floor((tokenExpirationEpoch - new Date().getTime() / 1000)) + ' seconds left!');
 
   // OK, we need to refresh the token. Stop printing and refresh.
-  if (++numberOfTimesUpdated > 5) {
-    clearInterval(this);
+  if (numberOfTimesUpdated > 1000) {
+    // clearInterval(this);
+    numberOfTimesUpdated = 0;
 
     // Refresh token and print the new time to expiration.
     spotifyApi.refreshAccessToken()
@@ -75,24 +84,21 @@ setInterval(function() {
   }
 }, 1000);
 
-
-
 var init = function() {
-    bot.api.channels.list({}, function(err, response) {
-        if(err) {
-            throw new Error(err);
+  bot.api.channels.list({}, function(err, response) {
+    if (err) {
+      throw new Error(err);
+    }
+    if (response.hasOwnProperty('channels') && response.ok) {
+      var total = response.channels.length;
+      for (var i = 0; i < total; i++) {
+        var channel = response.channels[i];
+        if(verifyChannel(channel)) {
+          return;
         }
-
-        if (response.hasOwnProperty('channels') && response.ok) {
-            var total = response.channels.length;
-            for (var i = 0; i < total; i++) {
-                var channel = response.channels[i];
-                if(verifyChannel(channel)) {
-                    return;
-                }
-            }
-        }
-    });
+      }
+    }
+  });
 
     bot.api.groups.list({}, function(err, response) {
         if(err) {
@@ -111,7 +117,6 @@ var init = function() {
     });
 };
 
-
 // Helper Functions ===============================================
 
 var getRealNameFromId = function(bot, userId) {
@@ -125,14 +130,17 @@ var getRealNameFromId = function(bot, userId) {
 };
 
 
-
 // Listeners  ===============================================
 
-controller.hears([/add ([<>:\d\w]*)/], 'direct_message', function(bot, message) {
+controller.hears([/track[:\/](\d\w*)/], 'direct_message', function(bot, message) {
+
   var trackId = message.match[1];
   if (trackId.indexOf('spotify:track:') !== -1) {
     trackId = trackId.slice(15, -1);
+  } else if (trackId.indexOf('https://open.spotify.com/track/') !== -1) {
+    trackId = trackId.slice(32, -1);
   }
+
 
   spotifyApi.getTrack(trackId).then(function(response) {
     var albumArtUrl = response.body.album.images[0].url;
@@ -161,21 +169,45 @@ controller.hears([/add ([<>:\d\w]*)/], 'direct_message', function(bot, message) 
         }, [{
           pattern: bot.utterances.yes,
           callback: function(response, convo) {
-            spotifyApi.addTracksToPlaylist('tshamz', playlistId, 'spotify:track:' + trackId).then(function(response) {
-              bot.reply(message, 'Good News! I was able to successfully add your track to the playlist!');
-              bot.say({
-                channel: channelId,
-                text: '*'+ userName +'* just added a song to the playlist\n' + albumArtUrl,
-                attachments: [{
-                  fallback: formattedSongTitle,
-                  text: formattedSongTitle,
-                  color: '#23CF5F',
-                  mrkdwn_in: ['fallback', 'text']
-                }]
+            spotifyApi.getPlaylist('tshamz', playlistId)
+              .then(function(data) {
+                var currentTrack;
+                var playlistOrder = data.body.tracks.items.map(function(item) {
+                  return item.track.id;
+                });
+                Spotify.getState(function(err, state) {
+                  currentTrackId = state.track_id.substring(14);
+                  var currentTrackPosition = playlistOrder.indexOf(currentTrackId);
+                  if (playlistOrder.indexOf(trackId) !== -1) {
+                    bot.reply(message, 'Moving your song to the top of the queue.');
+                    spotifyApi.reorderTracksInPlaylist('tshamz', playlistId, playlistOrder.indexOf(trackId), currentTrackPosition + 1, {"range_length": 1})
+                      .then(function(data) {
+                        console.log('Tracks reordered in playlist!');
+                      }, function(err) {
+                        console.log('Something went wrong!', err);
+                      });
+                  } else {
+                    spotifyApi.addTracksToPlaylist('tshamz', playlistId, 'spotify:track:' + trackId, {position: currentTrackPosition + 1}).then(function(response) {
+                      bot.reply(message, 'Good News! I was able to successfully add your track to the playlist!');
+                      bot.say({
+                        channel: channelId,
+                        text: '*'+ userName +'* just added a song to the playlist\n' + albumArtUrl,
+                        attachments: [{
+                          fallback: formattedSongTitle,
+                          text: formattedSongTitle,
+                          color: '#23CF5F',
+                          mrkdwn_in: ['fallback', 'text']
+                        }]
+                      });
+                    }, function(err) {
+                      bot.reply(message, 'Oof! Looks like something went wrong and I couldn\'t add your song. Try adding it again.');
+                    });
+                  }
+                });
+              }, function(err) {
+                console.log('Something went wrong!', err);
               });
-            }, function(err) {
-              bot.reply(message, 'Oof! Looks like something went wrong and I couldn\'t add your song. Try adding it again.');
-            });
+          convo.next();
           }
         }, {
           pattern: bot.utterances.no,
@@ -198,10 +230,15 @@ controller.hears([/add ([<>:\d\w]*)/], 'direct_message', function(bot, message) 
   });
 });
 
-controller.hears(['help'],'direct_message,direct_mention,mention', function(bot, message) {
-    bot.reply(message,'You can say these things to me:\n'+
-        'info - I will tell you about this track\n'+
-        'detail - I will tell you more about this track\n'
+controller.hears(['help'], 'direct_message', function(bot, message) {
+    bot.reply(message,'You can say these things to me:\n\n'+
+        '*info* - _I will tell you about this track_\n'+
+        '*detail* - _I will tell you more about this track_\n\n\n'+
+        'If you\'d like to add a track to the queue, direct message me the following:\n\n'+
+        '`add [track id]`\n\n'+
+        'where `[track id]` can be one of the following:\n'+
+        '    • a Spotify URI - e.g. spotify:track:XXXXXXXXXXXXXXXXXX\n'+
+        '    • a Spotify song link - e.g. https://open.spotify.com/track/XXXXXXXXXXXXXXXX\n'
     );
 });
 

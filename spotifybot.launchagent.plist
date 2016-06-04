@@ -6,7 +6,7 @@
     <string>spotify.slackbot</string>
 
     <key>WorkingDirectory</key>
-    <string>/BOT_HOME/</string>
+    <string>/Users/bva_tylershambora/Code/bots/mr-dynamite</string>
 
     <key>ProgramArguments</key>
     <array>
