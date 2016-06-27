@@ -15,16 +15,13 @@ var c = function(value) {
 
 module.exports = {
   addedToPlaylist: function(channelId, userName, trackInfo) {
-console.log(channelId);
-console.log(userName);
-console.log(trackInfo);
     return {
       "channel": channelId,
       "text": b(userName) + ' just added a song to the playlist.',
       "mrkdwn_in": ['text'],
       "attachments": [{
         "fallback": trackInfo.formattedTrackTitle + ' from the album - ' + b(trackInfo.album),
-        "text": trackInfo.formattedTrackTitle + '\n' + b(trackInfo.album),
+        "text": 'Title: ' + i(trackInfo.name) + '\nArtist: ' + b(trackInfo.artist) + '\nAlbum: ' + b(trackInfo.album),
         "color": '#23CF5F',
         "thumb_url": trackInfo.artworkUrls.small,
         "mrkdwn_in": ['text']
@@ -68,7 +65,7 @@ console.log(trackInfo);
     return {
       "attachments": [{
         "fallback": trackInfo.formattedTrackTitle + ' from the album - ' + b(trackInfo.album),
-        "text": trackInfo.formattedTrackTitle + '\nfrom the album - ' + b(trackInfo.album),
+        "text": 'Title: ' + i(trackInfo.name) + '\nArtist: ' + b(trackInfo.artist) + '\nAlbum: ' + b(trackInfo.album),
         "color": '#23CF5F',
         "thumb_url": trackInfo.artworkUrls.small,
         "mrkdwn_in": ['text']
@@ -94,7 +91,7 @@ console.log(trackInfo);
   },
   proceed: function(trackInfo) {
     var yesText = ['Absolutely', 'yessss!', 'Duuuuuh', 'Of Course', ':+1::skin-tone-3:'];
-    var noText = ['No', 'Nope', 'nvm', 'Negative', ':thumbsdown::skin-tone-3:'];
+    var noText = ['No', 'Nope', 'Negative', ':thumbsdown::skin-tone-3:'];
     var randomYesText = yesText[Math.floor(Math.random() * yesText.length)];
     var randomNoText = noText[Math.floor(Math.random() * noText.length)];
     var stringifiedTrackInfo = JSON.stringify(trackInfo);
@@ -143,9 +140,24 @@ console.log(trackInfo);
     };
   },
   searchResults: function(searchResults) {
+    var resultsActions = searchResults.map(function(result, index) {
+      return {
+        "name": index + 1,
+        "text": index + 1,
+        "value": JSON.stringify(searchResults[index]),
+        "type": "button"
+      };
+    });
+    var nvmAction = {
+      "name": "nvm",
+      "text": "nvm",
+      "value": "nvm",
+      "type": "button",
+      "style": "danger"
+    };
     var resultsAttachments = searchResults.map(function(result, index) {
       return {
-        "pretext": index + 1 + '.',
+        "title": index + 1 + '.',
         "thumb_url": result.artworkUrls.medium,
         "color": '#23CF5F',
         "fields": [{
@@ -168,33 +180,13 @@ console.log(trackInfo);
       };
     });
     var actionAttachment = {
-      "pretext": 'Select the number of the song you\'d like to add, or select "nvm" to start over and search again.',
+      "footer": "make a selection:",
       "fallback": 'Interactive Messages Not Supported',
       "callback_id": "select_a_track",
       "attachment_type": "default",
-      "actions": [{
-        "name": "1",
-        "text": "1",
-        "value": JSON.stringify(searchResults[0]),
-        "type": "button"
-      }, {
-        "name": "2",
-        "text": "2",
-        "value": JSON.stringify(searchResults[1]),
-        "type": "button"
-      }, {
-        "name": "3",
-        "text": "3",
-        "value": JSON.stringify(searchResults[2]),
-        "type": "button"
-      }, {
-        "name": "nvm",
-        "text": "nvm",
-        "value": "nvm",
-        "type": "button",
-        "style": "danger"
-      }]
+      "actions": resultsActions
     };
+    resultsActions.push(nvmAction);
     resultsAttachments.push(actionAttachment);
     return {
       "replace_original": true,

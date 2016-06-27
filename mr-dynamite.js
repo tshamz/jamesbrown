@@ -113,29 +113,28 @@ var spotifyApi = new SpotifyWebApi({
 // When our access token will expire
 var tokenExpirationEpoch;
 
-spotifyApi.refreshAccessToken().then(function(data) {
-  spotifyApi.setAccessToken(data.body['access_token']);
-  tokenExpirationEpoch = (new Date().getTime() / 1000) + data.body['expires_in'];
-  console.log('Retrieved token. It expires in ' + Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) + ' seconds!');
-});
+if (setup.spotify.authorizationCode) {
+  spotifyApi.authorizationCodeGrant(authorizationCode).then(function(data) {
+    // Set the access token and refresh token
+    console.log('access token: ' + data.body['access_token']);
+    console.log('refresh token: ' + data.body['refresh_token']);
 
+    spotifyApi.setAccessToken(data.body['access_token']);
+    spotifyApi.setRefreshToken(data.body['refresh_token']);
 
-// var authorizationCode = "AQAW9K7cLNwJSrZro1fP0pdkYbOEu5EIwUYXnCgalJfbnwwovn2SSmkqZaw-eGz1KbmCT6Yw8_0nwN2bqfhgV0kep_boIFVoXcSmdo0BDeuVGGl72hlTLU412ny7q5r6-PVpkxXkhSkH3otuML7om83RW9L_whTOzELfZOjjWETk6_0dMSPmAg4Vx2VoyqcF-4YveYMQ62SZycbkFuW4Piuf40H34p62_w37zRqvjtRIfP_xoYa4Vru38NlwvZC5tVFHBEIOFrUsSdi-azOgzldK9HH0-ORsPG3tXcHB9wYtG5qNcSFhQa4FyzFpH9KBxgVBH-r-ihp_u3IbTw";
-
-// spotifyApi.authorizationCodeGrant(authorizationCode).then(function(data) {
-//   // Set the access token and refresh token
-//   console.log('access token: ' + data.body['access_token']);
-//   console.log('refresh token: ' + data.body['refresh_token']);
-
-//   spotifyApi.setAccessToken(data.body['access_token']);
-//   spotifyApi.setRefreshToken(data.body['refresh_token']);
-
-//   // Save the amount of seconds until the access token expired
-//   tokenExpirationEpoch = (new Date().getTime() / 1000) + data.body['expires_in'];
-//   console.log('Retrieved token. It expires in ' + Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) + ' seconds!');
-// }, function(err) {
-//   console.log('Something went wrong when retrieving the access token!', err.message);
-// });
+    // Save the amount of seconds until the access token expired
+    tokenExpirationEpoch = (new Date().getTime() / 1000) + data.body['expires_in'];
+    console.log('Retrieved token. It expires in ' + Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) + ' seconds!');
+  }, function(err) {
+    console.log('Something went wrong when retrieving the access token!', err.message);
+  });
+} else {
+  spotifyApi.refreshAccessToken().then(function(data) {
+    spotifyApi.setAccessToken(data.body['access_token']);
+    tokenExpirationEpoch = (new Date().getTime() / 1000) + data.body['expires_in'];
+    console.log('Retrieved token. It expires in ' + Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) + ' seconds!');
+  });
+}
 
 
 // Watchers  ===============================================
