@@ -14,6 +14,7 @@ module.exports = {
     clientSecret: '1683f2cca315494b948afb8cd08e571e',
     redirectUri: 'http://dev.tylershambora.com/music',
     accessToken: 'BQCq-MS9iTKnlcLwZu-i0IaBIjoODBPt3Jgcp9qA63EmGUyceboyqusBGjYGpKvn8Hr_4OWVOFG3FfJJ0Wyxf6p35jvV_Ebgnmz9EgPAlMX3-79rl8akYxZSNkpuOg7xtKYPOWSFIQCEnoCQMzzpQ6XdzyBFnubrdOrU0Wf9apfyXkXrZ849fB5A9hcTDW9l8TSS8Xu9-BtgydaJtDG1IDJ6EFfOZxJqvTTmWcb1PRpadj_DihLi2A',
-    refreshToken: 'AQBqDFrYqONYkt_J-1wlP35Z2x9ecOa-p6a4h-GEzyQ1b6rjGsoOUYReubUPKmOpWaJJMnXh1bul6p_faqoIJCoMSQo0jnqniBkAGtr2l3b895_bcklaWpjsHpc8Dbw3-ks'
+    refreshToken: 'AQBqDFrYqONYkt_J-1wlP35Z2x9ecOa-p6a4h-GEzyQ1b6rjGsoOUYReubUPKmOpWaJJMnXh1bul6p_faqoIJCoMSQo0jnqniBkAGtr2l3b895_bcklaWpjsHpc8Dbw3-ks',
+    authorizationCode: null
   }
 };
