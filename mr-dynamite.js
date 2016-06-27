@@ -1,4 +1,4 @@
-// lt --port 3000 --subdomain mrdynomite
+// lt --port 3000 --subdomain mrdynamite
 
 var setup            = require('./bot-setup.js');
 var responses        = require('./responses.js');
@@ -77,7 +77,6 @@ controller.storage.teams.all(function(err, teams) {
   if (err) {
     throw new Error(err);
   }
-  // connect all teams with bots up to slack!
   for (var t in teams) {
     if (teams[t].bot) {
       controller.spawn(teams[t]).startRTM(function(err, bot) {
@@ -263,12 +262,7 @@ var addTrack = function(trackInfo, currentTrackPosition) {
 
 // Listeners  ===============================================
 
-// receive an interactive message, and reply with a message that will replace the original
 controller.on('interactive_message_callback', function(bot, message) {
-
-  if (message.callback_id !== 'add_this_track') {
-    return false;
-  }
 
   var action = message.actions[0];
 
@@ -276,7 +270,15 @@ controller.on('interactive_message_callback', function(bot, message) {
     bot.replyInteractive(message, {
       text: 'maybe you\'ll work up the courage one day.'
     });
-  } else if (action.name === 'yes') {
+    return false;
+  }
+
+  if (message.callback_id === 'select_a_track') {
+    var trackInfo = JSON.parse(action.value);
+    bot.replyInteractive(message, responses.proceed(trackInfo));
+  }
+
+  if (message.callback_id === 'add_this_track') {
     getRealNameFromId(bot, message.user).then(function(userName) {
       var trackInfo = JSON.parse(action.value);
       spotifyApi.getPlaylist(AUTHENTICATED_USER, PLAYLIST_ID)
@@ -289,11 +291,11 @@ controller.on('interactive_message_callback', function(bot, message) {
             var currentTrackPosition = playlistOrder.indexOf(currentTrackId);
             if (playlistOrder.indexOf(trackInfo.trackId) !== -1) {
               var trackPosition = playlistOrder.indexOf(trackInfo.trackId);
-              bot.reply(message, '*Moving ' + trackInfo.formattedTrackTitle + ' to the top of the queue.*');
+              bot.replyInteractive(message, '*Moving ' + trackInfo.formattedTrackTitle + ' to the top of the queue.*');
               reorderPlaylist(trackInfo, trackPosition, currentTrackPosition);
             } else {
+              bot.replyInteractive(message, trackInfo.formattedTrackTitle + ' added to playlist.');
               bot.say(responses.addedToPlaylist(REPORTING_CHANNEL, userName, trackInfo));
-              bot.reply(message, trackInfo.formattedTrackTitle + ' added to playlist.');
               addTrack(trackInfo, currentTrackPosition);
             }
           });
@@ -309,43 +311,21 @@ controller.hears([/search ([\s\S]+)/i], 'direct_message', function(bot, message)
   var searchResults = [];
 
   spotifyApi.searchTracks(searchQuery).then(function(data) {
-      var results = data.body.tracks.items;
+    var results = data.body.tracks.items;
 
-      if (results.length === 0) {
-        bot.reply(message, 'Sorry, no results.');
-        return false;
+    if (results.length === 0) {
+      bot.reply(message, 'Sorry, no results.');
+      return false;
+    }
+
+    for (var i = 0; i < results.length; i++) {
+      if (i >= 3) {
+        break;
       }
+      searchResults.push(createTrackObject(results[i]));
+    }
 
-      for (var i = 0; i < results.length; i++) {
-        if (i >= 3) {
-          break;
-        }
-        searchResults.push(createTrackObject(results[i]));
-      }
-
-      var askIfSure = function(response, convo, trackInfo) {
-        getRealNameFromId(bot, message.user).then(function(userName) {
-          bot.reply(message, responses.proceed(trackInfo));
-        });
-      };
-
-      bot.startConversation(message, function(err, convo) {
-        convo.ask(responses.searchResults(searchResults), [{
-          pattern: '([1-3])',
-          callback: function(response, convo) {
-            var index = parseInt(response.match[1], 10) - 1;
-            var trackInfo = searchResults[index];
-            askIfSure(response, convo, trackInfo);
-            convo.next();
-          }
-        }, {
-          pattern: 'nvm',
-          callback: function(response, convo) {
-            convo.say('maybe you\'ll work up the courage one day.');
-            convo.next();
-          }
-        }]);
-      });
+    bot.reply(message, responses.searchResults(searchResults));
 
     }, function(err) {
       bot.reply(message, 'Looks like this error just happened: `' + err.message + '`');
@@ -354,7 +334,6 @@ controller.hears([/search ([\s\S]+)/i], 'direct_message', function(bot, message)
 
 
 controller.hears([/add .*track[:\/](\d\w*)/i], 'direct_message', function(bot, message) {
-
   var trackId = normalizeTrackId(message.match[1]);
 
   spotifyApi.getTrack(trackId).then(function(response) {
