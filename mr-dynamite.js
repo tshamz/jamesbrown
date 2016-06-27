@@ -272,7 +272,7 @@ controller.on('interactive_message_callback', function(bot, message) {
 
   var action = message.actions[0];
 
-  if (action.name === 'no') {
+  if (action.name === 'no' || action.name === 'nvm') {
     bot.replyInteractive(message, {
       text: 'maybe you\'ll work up the courage one day.'
     });
@@ -289,11 +289,11 @@ controller.on('interactive_message_callback', function(bot, message) {
             var currentTrackPosition = playlistOrder.indexOf(currentTrackId);
             if (playlistOrder.indexOf(trackInfo.trackId) !== -1) {
               var trackPosition = playlistOrder.indexOf(trackInfo.trackId);
-              bot.replyInteractive(message, '*Moving ' + trackInfo.formattedTrackTitle + ' to the top of the queue.*');
+              bot.reply(message, '*Moving ' + trackInfo.formattedTrackTitle + ' to the top of the queue.*');
               reorderPlaylist(trackInfo, trackPosition, currentTrackPosition);
             } else {
               bot.say(responses.addedToPlaylist(REPORTING_CHANNEL, userName, trackInfo));
-              bot.replyInteractive(message, trackInfo.formattedTrackTitle + ' added to playlist.');
+              bot.reply(message, trackInfo.formattedTrackTitle + ' added to playlist.');
               addTrack(trackInfo, currentTrackPosition);
             }
           });
@@ -325,19 +325,7 @@ controller.hears([/search ([\s\S]+)/i], 'direct_message', function(bot, message)
 
       var askIfSure = function(response, convo, trackInfo) {
         getRealNameFromId(bot, message.user).then(function(userName) {
-          convo.ask(responses.proceed(trackInfo), [{
-            pattern: 'yes',
-            callback: function(response, convo) {
-              //updatePlaylist(bot, trackInfo, userName);
-              convo.next();
-            }
-          }, {
-            pattern: 'no',
-            callback: function(response, convo) {
-              // convo.say('maybe you\'ll work up the courage one day.');
-              convo.next();
-            }
-          }]);
+          bot.reply(message, responses.proceed(trackInfo));
         });
       };
 
@@ -372,21 +360,7 @@ controller.hears([/add .*track[:\/](\d\w*)/i], 'direct_message', function(bot, m
   spotifyApi.getTrack(trackId).then(function(response) {
     var trackInfo = createTrackObject(response.body);
     getRealNameFromId(bot, message.user).then(function(userName) {
-      bot.startConversation(message, function(err, convo) {
-        convo.ask(responses.proceed(trackInfo), [{
-          pattern: 'yes',
-          callback: function(reply, convo) {
-            //updatePlaylist(bot, trackInfo, userName);
-            convo.next();
-          }
-        }, {
-          pattern: 'no',
-          callback: function(reply, convo) {
-            convo.say('maybe you\'ll work up the courage one day.');
-            convo.next();
-          }
-        }]);
-      });
+      bot.reply(message, responses.proceed(trackInfo));
     });
   }, function(err) {
     bot.reply(message, 'Looks like this error just happened: `' + err.message + '`');
