@@ -13,7 +13,7 @@
     "url": "https://github.com/tshamz/mr-dynamite"
   },
   "dependencies": {
-    "botkit": "^0.0.15",
+    "botkit": "^0.2.2",
     "q": "^1.4.1",
     "request": "^2.72.0",
     "spotify-node-applescript": "^0.2.2",

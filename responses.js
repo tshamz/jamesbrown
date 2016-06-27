@@ -14,19 +14,18 @@ var c = function(value) {
 };
 
 module.exports = {
-  tryingToAdd: function(trackInfo) {
-    return 'Looks like you\'re trying to add: ' + trackInfo.formattedTrackTitle;
-  },
   addedToPlaylist: function(channelId, userName, trackInfo) {
+    console.log(channelId);
     return {
-      channel: channelId,
-      text: b(userName) + ' just added a song to the playlist',
-      attachments: [{
-        fallback: trackInfo.formattedTrackTitle,
-        text: trackInfo.formattedTrackTitle,
-        color: '#23CF5F',
-        mrkdwn_in: ['fallback', 'text'],
-        thumb_url: trackInfo.artworkUrls.small
+      "channel": channelId,
+      "text": b(userName) + ' just added a song to the playlist.',
+      "mrkdwn_in": ['text'],
+      "attachments": [{
+        "fallback": trackInfo.formattedTrackTitle + ' from the album - ' + b(trackInfo.album),
+        "text": trackInfo.formattedTrackTitle + '\nfrom the album - ' + b(trackInfo.album),
+        "color": '#23CF5F',
+        "thumb_url": trackInfo.artworkUrls.small,
+        "mrkdwn_in": ['text']
       }]
     };
   },
@@ -34,52 +33,43 @@ module.exports = {
     var canSay = b('up next') + " - " + i('I\'ll tell you what the next three tracks are') + '\n' +
                  b('info') + " - " + i('I\'ll tell you about this track') + '\n' +
                  b('detail') + " - " + i('I\'ll tell you more about this track');
-    var search = 'If you\'d like to search for a track to add to the queue, direct message me the following:' + '\n\n' +
-                 '\t\t' + c('search [search query]') + ' ' +  i('(without the square brackets)') + '\n\n' +
-                 'and I\'ll show you the top 3 results from Spotify and let you decide if you\'d like to add one of the tracks by entering the ' + b('number') + ' of the song you\'d like to add.';
-    var add = 'If you\'d like to add a track to the queue, direct message me the following:' + '\n\n' +
-              '\t\t' + c('add [Spotify URI]') + ' ' + i('(again, without the square brackes)') + '\n\n' +
+    var add = 'If you\'d like to add a track to the queue, direct message me:' + '\n\n' +
+              '\t' + c('add [Spotify URI]') + ' ' + i('(without the square brackes)') + '\n\n' +
               'where ' + c('[Spotify URI]') + 'can be one of the following:' + '\n\n' +
-              '\t\t• a Spotify URI - e.g. Spotify:track:' + b('[track id]') + '\n' +
-              '\t\t• a Spotify song link - e.g. https://open.Spotifycom/track/ ' + b('[track id]') + '\n\n' +
-              b('PROTIP:') + ' right click on a track in Spotify to copy either a song URI or link';
-    var notes = b('NOTE:') + ' I\'m pretty stupid so if you tell me something and nothing happens, just try repeating yourself or saying "no" or "nvm" and starting over.';
+              '\t• a Spotify URI - e.g. Spotify:track:' + b('[track id]') + '\n' +
+              '\t• a Spotify song link - e.g. https://open.Spotifycom/ ' + b('[track id]');
+    var search = 'If you\'d like to search for a track to add, direct message:' + '\n\n' +
+                 '\t' + c('search [search query]') + ' ' +  i('(again, without the square brackets)') + '\n\n' +
+                 'and I\'ll show you the top 3 results from Spotify. You\'ll then be able to either add one of the results or start over and search again.';
+    var protip = b('PROTIP:') + ' right click on a track in Spotify to copy either a song URI or link';
     return {
-      attachments: [{
-        title: 'You can say these things to me:',
-        fallback: canSay,
-        text: canSay,
-        color: '#23CF5F',
-        mrkdwn_in: ['fallback', 'text']
+      "attachments": [{
+        "title": 'Commands',
+        "fallback": canSay,
+        "text": canSay,
+        "mrkdwn_in": ['text']
       }, {
-        title: 'Searching Tracks:',
-        fallback: search,
-        text: search,
-        color: '#23CF5F',
-        mrkdwn_in: ['fallback', 'text']
+        "title": 'Adding Music:',
+        "fallback": add,
+        "text": add,
+        'footer': protip,
+        "mrkdwn_in": ['text', 'footer']
       }, {
-        title: 'Adding Tracks:',
-        fallback: add,
-        text: add,
-        color: '#23CF5F',
-        mrkdwn_in: ['fallback', 'text']
-      }, {
-        fallback: notes,
-        text: notes,
-        color: 'danger',
-        mrkdwn_in: ['fallback', 'text']
+        "title": 'Searching Music:',
+        "fallback": search,
+        "text": search,
+        "mrkdwn_in": ['text']
       }]
     };
   },
   detail: function(trackInfo) {
-    console.log(trackInfo);
     return {
-      attachments: [{
-        fallback: trackInfo.formattedTrackTitle + ' from the album - ' + b(trackInfo.album),
-        text: trackInfo.formattedTrackTitle + ' from the album - ' + b(trackInfo.album),
-        color: '#23CF5F',
-        mrkdwn_in: ['fallback', 'text'],
-        thumb_url: trackInfo.artworkUrls.small
+      "attachments": [{
+        "fallback": trackInfo.formattedTrackTitle + ' from the album - ' + b(trackInfo.album),
+        "text": trackInfo.formattedTrackTitle + '\nfrom the album - ' + b(trackInfo.album),
+        "color": '#23CF5F',
+        "thumb_url": trackInfo.artworkUrls.small,
+        "mrkdwn_in": ['text']
       }]
     };
   },
@@ -92,44 +82,121 @@ module.exports = {
       responseString += index + 1 + '. ' + i(track.name) + ' by ' + b(track.artist) + '\n';
     });
     return {
-      attachments: [{
-        fallback: responseString,
-        text: responseString,
-        color: '#23CF5F',
-        mrkdwn_in: ['fallback', 'text']
+      "attachments": [{
+        "fallback": responseString,
+        "text": responseString,
+        "color": '#23CF5F',
+        "mrkdwn_in": ['text']
       }]
     };
   },
-  proceed: function() {
+  proceed: function(trackInfo) {
+    var yesText = ['Absolutely', 'yessss!', 'Duuuuuh', 'Of Course', ':+1::skin-tone-3:'];
+    var noText = ['No', 'Nope', 'nvm', 'Negative', ':thumbsdown::skin-tone-3:'];
+    var randomYesText = yesText[Math.floor(Math.random() * yesText.length)];
+    var randomNoText = noText[Math.floor(Math.random() * noText.length)];
+    var stringifiedTrackInfo = JSON.stringify(trackInfo);
     return {
-      text: 'Would you like to proceed?',
-      attachments: [{
-        fallback: b('YES') + ' to confirm',
-        text: b('YES') + ' to confirm',
-        color: 'good',
-        mrkdwn_in: ['fallback', 'text']
-      }, {
-        fallback: b('NO') + ' to abort',
-        text: b('NO') + ' to abort',
-        color: 'danger',
-        mrkdwn_in: ['fallback', 'text']
+      "replace_original": true,
+      "attachments": [{
+        "fallback": trackInfo.formattedTrackTitle,
+        "callback_id": "add_this_track",
+        "pretext": b('It looks like you\'re trying to add:'),
+        "color": "#23CF5F",
+        "thumb_url": trackInfo.artworkUrls.medium,
+        "attachment_type": "default",
+        "footer": "is this correct?",
+        "mrkdwn_in": ['pretext'],
+        "fields": [{
+          "title": "Song",
+          "value": trackInfo.name,
+          "short": true
+        }, {
+          "title": "Artist",
+          "value": trackInfo.artist,
+          "short": true
+        }, {
+          "title": "Album",
+          "value": trackInfo.album,
+          "short": true
+        }, {
+          "title": "Spotify ID",
+          "value": trackInfo.trackId,
+          "short": true
+        }],
+        "actions": [{
+          "name": "yes",
+          "text": randomYesText,
+          "value": stringifiedTrackInfo,
+          "type": "button",
+          "style": "primary"
+        }, {
+          "name": "no",
+          "text": randomNoText,
+          "value": "no",
+          "type": "button",
+          "style": "danger"
+        }]
       }]
     };
   },
   searchResults: function(searchResults) {
     var resultsAttachments = searchResults.map(function(result, index) {
       return {
-        title: index + 1 + '.',
-        thumb_url: result.artworkUrls.small,
-        fallback: result.formattedTrackTitle,
-        text: result.formattedTrackTitle,
-        color: '#23CF5F',
-        mrkdwn_in: ['fallback', 'text']
+        "pretext": index + 1 + '.',
+        "thumb_url": result.artworkUrls.medium,
+        "color": '#23CF5F',
+        "fields": [{
+          "title": "Song",
+          "value": result.name,
+          "short": true
+        }, {
+          "title": "Artist",
+          "value": result.artist,
+          "short": true
+        }, {
+          "title": "Album",
+          "value": result.album,
+          "short": true
+        }, {
+          "title": "Spotify ID",
+          "value": result.trackId,
+          "short": true
+        }]
       };
     });
+    var actionAttachment = {
+      "pretext": 'Select the number of the song you\'d like to add, or select "nvm" to start over and search again.',
+      "fallback": 'Interactive Messages Not Supported',
+      "callback_id": "select_a_track",
+      "attachment_type": "default",
+      "actions": [{
+        "name": "1",
+        "value": "1",
+        "text": "1",
+        "type": "button"
+      }, {
+        "name": "2",
+        "text": "2",
+        "value": "2",
+        "type": "button"
+      }, {
+        "name": "3",
+        "text": "3",
+        "value": "3",
+        "type": "button"
+      }, {
+        "name": "nvm",
+        "text": "nvm",
+        "value": "nvm",
+        "type": "button",
+        "style": "danger"
+      }]
+    };
+    resultsAttachments.push(actionAttachment);
     return {
-      text: 'Enter the *number* of the song you\'d like to add or type *no* or *nvm* to continue without adding anything',
-      attachments: resultsAttachments
+      "replace_original": true,
+      "attachments": resultsAttachments
     };
   }
 };

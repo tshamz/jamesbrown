@@ -1,6 +1,8 @@
 module.exports = {
+  server: {
+    port: 3000
+  },
   slack: {
-    token: 'xoxb-32275704978-NtXtePSTimjng7KNlcOoutXh',
     clientId: '2334831841.53143437174',
     clientSecret: 'c5d86e4ec8189c653f52c502005da6ff',
     channel: 'studio-54',
