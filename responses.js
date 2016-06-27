@@ -15,14 +15,16 @@ var c = function(value) {
 
 module.exports = {
   addedToPlaylist: function(channelId, userName, trackInfo) {
-    console.log(channelId);
+console.log(channelId);
+console.log(userName);
+console.log(trackInfo);
     return {
       "channel": channelId,
       "text": b(userName) + ' just added a song to the playlist.',
       "mrkdwn_in": ['text'],
       "attachments": [{
         "fallback": trackInfo.formattedTrackTitle + ' from the album - ' + b(trackInfo.album),
-        "text": trackInfo.formattedTrackTitle + '\nfrom the album - ' + b(trackInfo.album),
+        "text": trackInfo.formattedTrackTitle + '\n' + b(trackInfo.album),
         "color": '#23CF5F',
         "thumb_url": trackInfo.artworkUrls.small,
         "mrkdwn_in": ['text']
@@ -172,18 +174,18 @@ module.exports = {
       "attachment_type": "default",
       "actions": [{
         "name": "1",
-        "value": "1",
         "text": "1",
+        "value": JSON.stringify(searchResults[0]),
         "type": "button"
       }, {
         "name": "2",
         "text": "2",
-        "value": "2",
+        "value": JSON.stringify(searchResults[1]),
         "type": "button"
       }, {
         "name": "3",
         "text": "3",
-        "value": "3",
+        "value": JSON.stringify(searchResults[2]),
         "type": "button"
       }, {
         "name": "nvm",
