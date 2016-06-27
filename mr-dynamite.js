@@ -1,3 +1,5 @@
+// lt --port 3000 --subdomain mrdynomite
+
 var setup            = require('./bot-setup.js');
 var responses        = require('./responses.js');
 
@@ -11,12 +13,20 @@ var os               = require('os');
 var https            = require('https');
 
 
+if (!setup.slack.clientId || !setup.slack.clientSecret || !setup.server.port) {
+  console.log('Error: Specify clientId clientSecret and port in environment');
+  process.exit(1);
+}
+
 var AUTHENTICATED_USER = setup.spotify.userName;
 var PLAYLIST_ID = setup.spotify.playlistId;
+var REPORTING_CHANNEL = setup.slack.channel;
 
 
 var controller = Botkit.slackbot({
-    debug: false
+    interactive_replies: true,
+    json_file_store: './db_slackbutton_bot/',
+    logLevel: 'emergency'
 });
 
 controller.configureSlackApp({
@@ -25,30 +35,70 @@ controller.configureSlackApp({
   scopes: ['bot']
 });
 
-controller.setupWebserver(8080, function(err, webserver) {
-  if (err) {
-    throw new Error(err);
-  }
+controller.setupWebserver(setup.server.port, function(err, webserver) {
   controller.createHomepageEndpoint(controller.webserver);
-  controller.createOauthEndpoints(controller.webserver, function(err,req,res) {
+  controller.createOauthEndpoints(controller.webserver,function(err,req,res) {
     if (err) {
       res.status(500).send('ERROR: ' + err);
     } else {
       res.send('Success!');
     }
   });
+  controller.createWebhookEndpoints(controller.webserver);
 });
 
-var bot = controller.spawn({
-    token: setup.slack.token
-});
 
-bot.startRTM(function(err) {
-  if (err) {
-    console.log('Even if you fall on your face, you\'re still moving forward.');
-    throw new Error(err);
+var _bots = {};
+var trackBot = function(bot) {
+  _bots[bot.config.token] = bot;
+};
+
+controller.on('create_bot',function(bot, config) {
+  if (_bots[bot.config.token]) {
+    // already online! do nothing.
+  } else {
+    bot.startRTM(function(err) {
+      if (!err) {
+        trackBot(bot);
+      }
+      bot.startPrivateConversation({user: config.createdBy},function(err, convo) {
+        if (err) {
+          console.log(err);
+        } else {
+          convo.say('Suuuup. Thanks for inviting me to the team!');
+          convo.say('If you feel so inclined, you could make a public channel, invite me, add the channel name to the bot-setup.js file, and then I\'ll broadcast updates stuff goes down.');
+        }
+      });
+    });
   }
 });
+
+controller.storage.teams.all(function(err, teams) {
+  if (err) {
+    throw new Error(err);
+  }
+  // connect all teams with bots up to slack!
+  for (var t in teams) {
+    if (teams[t].bot) {
+      controller.spawn(teams[t]).startRTM(function(err, bot) {
+        if (err) {
+          console.log('Error connecting bot to Slack:',err);
+        } else {
+          trackBot(bot);
+        }
+      });
+    }
+  }
+});
+
+controller.on('rtm_open',function(bot) {
+  console.log('** The RTM api just connected!');
+});
+
+controller.on('rtm_close',function(bot) {
+  console.log('** The RTM api just closed');
+});
+
 
 var spotifyApi = new SpotifyWebApi({
   redirectUri: setup.spotify.redirectUri,
@@ -89,39 +139,9 @@ spotifyApi.refreshAccessToken().then(function(data) {
 // });
 
 
-// Initialization ===============================================
-
-var init = function() {
-  bot.api.channels.list({}, function(err, response) {
-    if (response.hasOwnProperty('channels') && response.ok) {
-      var total = response.channels.length;
-      for (var i = 0; i < total; i++) {
-        var channel = response.channels[i];
-        if (verifyChannel(channel)) {
-          return;
-        }
-      }
-    }
-  });
-
-  bot.api.groups.list({}, function(err, response) {
-    if (response.hasOwnProperty('groups') && response.ok) {
-      var total = response.groups.length;
-      for (var i = 0; i < total; i++) {
-        var channel = response.groups[i];
-        if (verifyChannel(channel)) {
-            return;
-        }
-      }
-    }
-  });
-};
-
-
 // Watchers  ===============================================
 
 var lastTrackId;
-var channelId;
 
 var checkRunning = function() {
   var deferred = q.defer();
@@ -137,7 +157,7 @@ var checkRunning = function() {
 var checkForTrackChange = function() {
   Spotify.getTrack(function(err, track) {
     if (track && (track.id !== lastTrackId)) {
-      if (!channelId) {
+      if (!REPORTING_CHANNEL) {
         return;
       }
       lastTrackId = track.id;
@@ -155,7 +175,7 @@ setInterval(function() {
       if(lastTrackId !== null) {
         bot.say({
           text: 'Oh no! Where did Spotify go? It doesn\'t seem to be running 😨',
-          channel: channelId
+          channel: REPORTING_CHANNEL
         });
         lastTrackId = null;
       }
@@ -163,12 +183,10 @@ setInterval(function() {
   });
 }, 5000);
 
-// Continually print out the time left until the token expires..
 var tick = 0;
 setInterval(function() {
   tick++;
-  // console.log('tick: ' + tick);
-  // we should probably refresh the token.
+
   if (tick > 1500) {
     tick = 0;
 
@@ -191,17 +209,17 @@ setInterval(function() {
 var createTrackObject = function(data) {
   var artists = data.artists.map(function(artistObj) {
     return artistObj.name;
-  });
+  }).join(', ');
   return {
-    name: data.name,
-    artist: artists.join(', '),
-    album: data.album.name,
-    artworkUrls: {
-      medium: data.album.images[1].url,
-      small: data.album.images[2].url
+    "name": data.name,
+    "artist": artists,
+    "album": data.album.name,
+    "artworkUrls": {
+      "medium": data.album.images[1].url,
+      "small": data.album.images[2].url
     },
-    formattedTrackTitle: '_' + data.name + '_ by *' + artists.join(', ') + '*',
-    trackId: data.id
+    "formattedTrackTitle": "_" + data.name + "_ by *" + artists + "*",
+    "trackId": data.id
   };
 };
 
@@ -226,17 +244,7 @@ var getRealNameFromId = function(bot, userId) {
   return deferred.promise;
 };
 
-var verifyChannel = function(channel) {
-  if(channel && channel.name && channel.id && setup.slack.channel && channel.name == setup.slack.channel) {
-    channelId = channel.id;
-    console.log('** ...chilling out on #' + channel.name);
-    return true;
-  }
-  return false;
-};
-
 var logToConsole = function(userName, song, artists) {
-
   console.log(userName + ' just added: ' + song + ' by ' + artists.join(', '));
 };
 
@@ -254,6 +262,46 @@ var addTrack = function(trackInfo, currentTrackPosition) {
 
 
 // Listeners  ===============================================
+
+// receive an interactive message, and reply with a message that will replace the original
+controller.on('interactive_message_callback', function(bot, message) {
+
+  if (message.callback_id !== 'add_this_track') {
+    return false;
+  }
+
+  var action = message.actions[0];
+
+  if (action.name === 'no') {
+    bot.replyInteractive(message, {
+      text: 'maybe you\'ll work up the courage one day.'
+    });
+  } else if (action.name === 'yes') {
+    getRealNameFromId(bot, message.user).then(function(userName) {
+      var trackInfo = JSON.parse(action.value);
+      spotifyApi.getPlaylist(AUTHENTICATED_USER, PLAYLIST_ID)
+        .then(function(data) {
+          var playlistOrder = data.body.tracks.items.map(function(item) {
+            return item.track.id;
+          });
+          Spotify.getState(function(err, state) {
+            var currentTrackId = normalizeTrackId(state.track_id);
+            var currentTrackPosition = playlistOrder.indexOf(currentTrackId);
+            if (playlistOrder.indexOf(trackInfo.trackId) !== -1) {
+              var trackPosition = playlistOrder.indexOf(trackInfo.trackId);
+              bot.replyInteractive(message, '*Moving ' + trackInfo.formattedTrackTitle + ' to the top of the queue.*');
+              reorderPlaylist(trackInfo, trackPosition, currentTrackPosition);
+            } else {
+              bot.say(responses.addedToPlaylist(REPORTING_CHANNEL, userName, trackInfo));
+              bot.replyInteractive(message, trackInfo.formattedTrackTitle + ' added to playlist.');
+              addTrack(trackInfo, currentTrackPosition);
+            }
+          });
+        });
+    });
+  }
+
+});
 
 controller.hears([/search ([\s\S]+)/i], 'direct_message', function(bot, message) {
 
@@ -275,17 +323,31 @@ controller.hears([/search ([\s\S]+)/i], 'direct_message', function(bot, message)
         searchResults.push(createTrackObject(results[i]));
       }
 
-      var askChoice = function(response, convo) {
+      var askIfSure = function(response, convo, trackInfo) {
+        getRealNameFromId(bot, message.user).then(function(userName) {
+          convo.ask(responses.proceed(trackInfo), [{
+            pattern: 'yes',
+            callback: function(response, convo) {
+              //updatePlaylist(bot, trackInfo, userName);
+              convo.next();
+            }
+          }, {
+            pattern: 'no',
+            callback: function(response, convo) {
+              // convo.say('maybe you\'ll work up the courage one day.');
+              convo.next();
+            }
+          }]);
+        });
+      };
+
+      bot.startConversation(message, function(err, convo) {
         convo.ask(responses.searchResults(searchResults), [{
-          default: true,
+          pattern: '([1-3])',
           callback: function(response, convo) {
-            convo.say('Sry, I didn\'t understand that. Pls try again');
-            convo.next();
-          }
-        }, {
-          pattern: bot.utterances.no,
-          callback: function(response, convo) {
-            convo.say('maybe you\'ll work up the courage one day.');
+            var index = parseInt(response.match[1], 10) - 1;
+            var trackInfo = searchResults[index];
+            askIfSure(response, convo, trackInfo);
             convo.next();
           }
         }, {
@@ -294,67 +356,8 @@ controller.hears([/search ([\s\S]+)/i], 'direct_message', function(bot, message)
             convo.say('maybe you\'ll work up the courage one day.');
             convo.next();
           }
-        }, {
-          pattern: '([1-3])\.?',
-          callback: function(response, convo) {
-            var index = parseInt(response.match[1], 10) - 1;
-            var result = searchResults[index];
-            askIfSure(response, convo, result);
-            convo.next();
-          }
         }]);
-      };
-
-      var askIfSure = function(response, convo, trackInfo) {
-        getRealNameFromId(bot, message.user).then(function(userName) {
-          bot.startConversation(message, function(err, convo) {
-            convo.say(responses.tryingToAdd(trackInfo));
-            convo.ask(responses.proceed(), [{
-              default: true,
-              callback: function(response, convo) {
-                convo.say('Sry, I didn\'t understand that. Pls try again');
-                convo.next();
-              }
-            }, {
-              pattern: bot.utterances.no,
-              callback: function(response, convo) {
-                convo.say('maybe you\'ll work up the courage one day.');
-                convo.next();
-              }
-            }, {
-              pattern: bot.utterances.yes,
-              callback: function(response, convo) {
-                updatePlaylist(trackInfo, userName);
-                convo.next();
-              }
-            }]);
-          });
-        });
-      };
-
-      var updatePlaylist = function(trackInfo, userName) {
-        spotifyApi.getPlaylist(AUTHENTICATED_USER, PLAYLIST_ID)
-          .then(function(data) {
-            var playlistOrder = data.body.tracks.items.map(function(item) {
-              return item.track.id;
-            });
-            Spotify.getState(function(err, state) {
-              var currentTrackId = normalizeTrackId(state.track_id);
-              var currentTrackPosition = playlistOrder.indexOf(currentTrackId);
-              if (playlistOrder.indexOf(trackInfo.trackId) !== -1) {
-                var trackPosition = playlistOrder.indexOf(trackInfo.trackId);
-                bot.reply(message, 'Moving your song to the top of the queue.');
-                reorderPlaylist(trackInfo, trackPosition, currentTrackPosition);
-              } else {
-                bot.reply(message, 'Good News! I was able to successfully add your track to the playlist!');
-                bot.say(responses.addedToPlaylist(channelId, userName, trackInfo));
-                addTrack(trackInfo, currentTrackPosition);
-              }
-            });
-          });
-      };
-
-      bot.startConversation(message, askChoice);
+      });
 
     }, function(err) {
       bot.reply(message, 'Looks like this error just happened: `' + err.message + '`');
@@ -366,49 +369,20 @@ controller.hears([/add .*track[:\/](\d\w*)/i], 'direct_message', function(bot, m
 
   var trackId = normalizeTrackId(message.match[1]);
 
-  var updatePlaylist = function(trackInfo, userName) {
-    spotifyApi.getPlaylist(AUTHENTICATED_USER, PLAYLIST_ID)
-      .then(function(data) {
-        var playlistOrder = data.body.tracks.items.map(function(item) {
-          return item.track.id;
-        });
-        Spotify.getState(function(err, state) {
-          var currentTrackId = normalizeTrackId(state.track_id);
-          var currentTrackPosition = playlistOrder.indexOf(currentTrackId);
-          if (playlistOrder.indexOf(trackInfo.trackId) !== -1) {
-            var trackPosition = playlistOrder.indexOf(trackInfo.trackId);
-            bot.reply(message, 'Moving your song to the top of the queue.');
-            reorderPlaylist(trackInfo, trackPosition, currentTrackPosition);
-          } else {
-            bot.reply(message, 'Good News! I was able to successfully add your track to the playlist!');
-            bot.say(responses.addedToPlaylist(channelId, userName, trackInfo));
-            addTrack(trackInfo, currentTrackPosition);
-          }
-        });
-      });
-  };
-
   spotifyApi.getTrack(trackId).then(function(response) {
     var trackInfo = createTrackObject(response.body);
     getRealNameFromId(bot, message.user).then(function(userName) {
       bot.startConversation(message, function(err, convo) {
-        convo.say(responses.tryingToAdd(trackInfo));
-        convo.ask(responses.proceed(), [{
-          default: true,
-          callback: function(response, convo) {
-            convo.say('Sry, I didn\'t understand that. Pls try again');
+        convo.ask(responses.proceed(trackInfo), [{
+          pattern: 'yes',
+          callback: function(reply, convo) {
+            //updatePlaylist(bot, trackInfo, userName);
             convo.next();
           }
         }, {
-          pattern: bot.utterances.no,
-          callback: function(response, convo) {
+          pattern: 'no',
+          callback: function(reply, convo) {
             convo.say('maybe you\'ll work up the courage one day.');
-            convo.next();
-          }
-        }, {
-          pattern: bot.utterances.yes,
-          callback: function(response, convo) {
-            updatePlaylist(trackInfo, userName);
             convo.next();
           }
         }]);
@@ -419,7 +393,8 @@ controller.hears([/add .*track[:\/](\d\w*)/i], 'direct_message', function(bot, m
   });
 });
 
-controller.hears(['what\'?s next', 'up next', 'next up'], 'direct_message,direct_mention', function(bot, message) {
+
+controller.hears(['/what\'?s next/', 'up next', 'next up', '/what\'?s up/'], 'direct_message,direct_mention', function(bot, message) {
   spotifyApi.getPlaylist(AUTHENTICATED_USER, PLAYLIST_ID)
     .then(function(data) {
       var playlist = data.body.tracks.items;
@@ -438,10 +413,10 @@ controller.hears(['what\'?s next', 'up next', 'next up'], 'direct_message,direct
           }
           var artists = playlist[nextIndex].track.artists.map(function(artistObj) {
             return artistObj.name;
-          });
+          }).join(', ');
           nextThreeTracks.push({
             name: playlist[nextIndex].track.name,
-            artist: artists.join(', ')
+            artist: artists
           });
         }
         bot.reply(message, responses.upNext(nextThreeTracks));
@@ -485,5 +460,3 @@ controller.hears(['heysup'], 'direct_message,direct_mention,mention', function(b
   });
   bot.reply(message, "Hello.");
 });
-
-init();
