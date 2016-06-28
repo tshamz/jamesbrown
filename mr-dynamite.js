@@ -1,5 +1,3 @@
-// lt --port 3000 --subdomain mrdynamite
-
 var setup            = require('./bot-setup.js');
 var responses        = require('./responses.js');
 
