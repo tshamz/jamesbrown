@@ -1,29 +1,35 @@
-var setup            = require('./bot-setup.js');
-var responses        = require('./responses.js');
+// Setup =================================================
+// =======================================================
 
-var Botkit           = require('botkit');
-var request          = require('request');
-var SpotifyWebApi    = require('spotify-web-api-node');
-var Spotify          = require('spotify-node-applescript');
+var setup                 = require('./bot-setup.js');
+var responses             = require('./responses.js');
 
-var q                = require('q');
-var os               = require('os');
-var https            = require('https');
+var Botkit                = require('botkit');
+var SpotifyWebApi         = require('spotify-web-api-node');
+var Spotify               = require('spotify-node-applescript');
 
+var q                     = require('q');
+var os                    = require('os');
+var open                  = require('open');
+var https                 = require('https');
+var prompt                = require('prompt');
+var request               = require('request');
+
+const AUTHENTICATED_USER  = setup.spotify.userName;
+const PLAYLIST_ID         = setup.spotify.playlistId;
+const REPORTING_CHANNEL   = setup.slack.channel;
+
+// Slack App =============================================
+// =======================================================
 
 if (!setup.slack.clientId || !setup.slack.clientSecret || !setup.server.port) {
   console.log('Error: Specify clientId clientSecret and port in environment');
   process.exit(1);
 }
 
-var AUTHENTICATED_USER = setup.spotify.userName;
-var PLAYLIST_ID = setup.spotify.playlistId;
-var REPORTING_CHANNEL = setup.slack.channel;
-
-
 var controller = Botkit.slackbot({
     interactive_replies: true,
-    json_file_store: './db_slackbutton_bot/',
+    json_file_store: './db_slackapp_bot/',
     logLevel: 'emergency'
 });
 
@@ -35,16 +41,14 @@ controller.configureSlackApp({
 
 controller.setupWebserver(setup.server.port, function(err, webserver) {
   controller.createHomepageEndpoint(controller.webserver);
-  controller.createOauthEndpoints(controller.webserver,function(err,req,res) {
+  controller.createOauthEndpoints(controller.webserver, function(err, req, res) {
     if (err) {
       res.status(500).send('ERROR: ' + err);
     } else {
       res.send('Success!');
     }
   });
-  controller.createWebhookEndpoints(controller.webserver);
 });
-
 
 var _bots = {};
 var trackBot = function(bot) {
@@ -63,7 +67,7 @@ controller.on('create_bot',function(bot, config) {
         if (err) {
           console.log(err);
         } else {
-          convo.say('Suuuup. Thanks for inviting me to the team!');
+          convo.say('Sup. Thanks for inviting me to the team!');
           convo.say('If you feel so inclined, you could make a public channel, invite me, add the channel name to the bot-setup.js file, and then I\'ll broadcast updates stuff goes down.');
         }
       });
@@ -88,54 +92,84 @@ controller.storage.teams.all(function(err, teams) {
   }
 });
 
-controller.on('rtm_open',function(bot) {
-  console.log('** The RTM api just connected!');
-});
+// Spotify App ===========================================
+// =======================================================
 
-controller.on('rtm_close',function(bot) {
-  console.log('** The RTM api just closed');
-});
+// Wait for Slackbot to finish loading before connecting to Spotify API
+controller.on('rtm_open', function(bot) {
 
+  // When our Spotify access token will expire
+  var tokenExpirationEpoch;
 
-var spotifyApi = new SpotifyWebApi({
-  redirectUri: setup.spotify.redirectUri,
-  clientId: setup.spotify.clientId,
-  clientSecret: setup.spotify.clientSecret,
-  accessToken: setup.spotify.accessToken,
-  refreshToken: setup.spotify.refreshToken
-});
+  var scopes = ['playlist-read-private', 'playlist-read-collaborative', 'playlist-modify-public', 'playlist-modify-private'];
 
-
-// Authentication ===============================================
-
-// When our access token will expire
-var tokenExpirationEpoch;
-
-if (setup.spotify.authorizationCode) {
-  spotifyApi.authorizationCodeGrant(authorizationCode).then(function(data) {
-    // Set the access token and refresh token
-    console.log('access token: ' + data.body['access_token']);
-    console.log('refresh token: ' + data.body['refresh_token']);
-
-    spotifyApi.setAccessToken(data.body['access_token']);
-    spotifyApi.setRefreshToken(data.body['refresh_token']);
-
-    // Save the amount of seconds until the access token expired
-    tokenExpirationEpoch = (new Date().getTime() / 1000) + data.body['expires_in'];
-    console.log('Retrieved token. It expires in ' + Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) + ' seconds!');
-  }, function(err) {
-    console.log('Something went wrong when retrieving the access token!', err.message);
+  var spotifyApi = new SpotifyWebApi({
+    redirectUri: setup.spotify.redirectUri,
+    clientId: setup.spotify.clientId,
+    clientSecret: setup.spotify.clientSecret
   });
-} else {
-  spotifyApi.refreshAccessToken().then(function(data) {
-    spotifyApi.setAccessToken(data.body['access_token']);
-    tokenExpirationEpoch = (new Date().getTime() / 1000) + data.body['expires_in'];
-    console.log('Retrieved token. It expires in ' + Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) + ' seconds!');
+
+  var authCodeFlow = function() {
+    open(spotifyApi.createAuthorizeURL(scopes));
+    console.log('\nAuthorize and enter the resulting code attached to the redirect URI...');
+    prompt.start();
+    prompt.get(['auth_code'], function (err, result) {
+      var code = result.auth_code.replace(/https?:.*code=/, '').replace(/[&\?]+?state=.*/, '');
+
+      // Exchange provided auth code for tokens
+      spotifyApi.authorizationCodeGrant(code).then(function(data) {
+
+        // Receive, set, and store Spotify access and refresh tokens
+        bot.identifyTeam(function(err, team_id) {
+          controller.storage.teams.get(team_id, function(err, team_data) {
+            team_data.spotifyRefreshToken = data.body.refresh_token;
+            team_data.spotifyAccessToken = data.body.access_token;
+            controller.storage.teams.save(team_data, function(err) {
+              spotifyApi.setRefreshToken(team_data.spotifyRefreshToken);
+              spotifyApi.setAccessToken(team_data.spotifyAccessToken);
+
+              console.log('\nrefresh token: ' + data.body.refresh_token);
+              console.log('\naccess token: ' + data.body.access_token);
+
+              // Save the amount of seconds until the access token expired
+              tokenExpirationEpoch = (new Date().getTime() / 1000) + data.body.expires_in;
+              console.log('\nRetrieved token. It expires in ' + Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) + ' seconds!');
+            });
+          });
+        });
+      }, function(err) {
+        throw new Error('There was something wrong with the provided auth code.');
+      });
+    });
+  };
+
+  controller.storage.teams.all(function(err, teams) {
+    if (err) {
+      throw new Error(err);
+    }
+
+    for (var t in teams) {
+      // If access and refresh tokens are stored, set them
+      if (teams[t].spotifyAccessToken && teams[t].spotifyRefreshToken) {
+        spotifyApi.setAccessToken(teams[t].spotifyAccessToken);
+        spotifyApi.setRefreshToken(teams[t].spotifyRefreshToken);
+
+        spotifyApi.refreshAccessToken().then(function(data) {
+          spotifyApi.setAccessToken(data.body.access_token);
+          tokenExpirationEpoch = (new Date().getTime() / 1000) + data.body.expires_in;
+          console.log('Retrieved token. It expires in ' + Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) + ' seconds!');
+        }, function(err) {
+          authCodeFlow();
+        });
+      } else {
+        authCodeFlow();
+      }
+    }
   });
-}
+});
 
-
-// Watchers  ===============================================
+// Watchers ==============================================
+// =======================================================
 
 var lastTrackId;
 
@@ -161,7 +195,24 @@ var checkForTrackChange = function() {
   });
 };
 
+var tick = 0;
 setInterval(function() {
+  tick++;
+
+  if (tick > 1500) {
+    tick = 0;
+
+    // Refresh token and print the new time to expiration.
+    spotifyApi.refreshAccessToken()
+      .then(function(data) {
+        spotifyApi.setAccessToken(data.body.access_token);
+        tokenExpirationEpoch = (new Date().getTime() / 1000) + data.body.expires_in;
+        console.log('\nRefreshed token. It expires in ' + Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) + ' seconds!');
+      }, function(err) {
+        console.log('Could not refresh the token!', err.message);
+      });
+  }
+
   checkRunning()
   .then(function(running) {
     if (running) {
@@ -177,30 +228,10 @@ setInterval(function() {
       }
     }
   });
-}, 5000);
-
-var tick = 0;
-setInterval(function() {
-  tick++;
-
-  if (tick > 1500) {
-    tick = 0;
-
-    // Refresh token and print the new time to expiration.
-    spotifyApi.refreshAccessToken()
-      .then(function(data) {
-        spotifyApi.setAccessToken(data.body['access_token']);
-        tokenExpirationEpoch = (new Date().getTime() / 1000) + data.body['expires_in'];
-        console.log('Refreshed token.');
-      }, function(err) {
-        console.log('Could not refresh the token!', err.message);
-      });
-  }
 }, 1000);
 
-
-// Helper Functions ===============================================
-
+// Helpers ===============================================
+// =======================================================
 
 var createTrackObject = function(data) {
   var artists = data.artists.map(function(artistObj) {
@@ -218,7 +249,6 @@ var createTrackObject = function(data) {
     "trackId": data.id
   };
 };
-
 
 var normalizeTrackId = function(rawTrackId) {
   var trackId = rawTrackId;
@@ -256,8 +286,8 @@ var addTrack = function(trackInfo, currentTrackPosition) {
   });
 };
 
-
-// Listeners  ===============================================
+// Listeners =============================================
+// =======================================================
 
 controller.on('interactive_message_callback', function(bot, message) {
 
@@ -331,6 +361,7 @@ controller.hears([/search ([\s\S]+)/i], 'direct_message', function(bot, message)
 
 
 controller.hears([/add .*track[:\/](\d\w*)/i], 'direct_message', function(bot, message) {
+
   var trackId = normalizeTrackId(message.match[1]);
 
   spotifyApi.getTrack(trackId).then(function(response) {
@@ -409,4 +440,12 @@ controller.hears(['heysup'], 'direct_message,direct_mention,mention', function(b
     name: 'radio',
   });
   bot.reply(message, "Hello.");
+});
+
+controller.hears([/[\s\S]+/], 'direct_message', function(bot, message) {
+  bot.reply(message, 'Sorry, I don\'t understand that.');
+});
+
+controller.on('rtm_close',function(bot) {
+  console.log('** The RTM api just closed');
 });
