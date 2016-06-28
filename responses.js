@@ -65,7 +65,7 @@ module.exports = {
     return {
       "attachments": [{
         "fallback": trackInfo.formattedTrackTitle + ' from the album - ' + b(trackInfo.album),
-        "text": 'Title: ' + i(trackInfo.name) + '\nArtist: ' + b(trackInfo.artist) + '\nAlbum: ' + b(trackInfo.album),
+        "text": 'Title: ' + i(trackInfo.name) + '\nArtist: ' + b(trackInfo.artist) + '\nAlbum: ' + b(trackInfo.album) + '\nSpotify ID: ' + trackInfo.trackId,
         "color": '#23CF5F',
         "thumb_url": trackInfo.artworkUrls.small,
         "mrkdwn_in": ['text']
@@ -90,8 +90,8 @@ module.exports = {
     };
   },
   proceed: function(trackInfo) {
-    var yesText = ['Absolutely', 'yessss!', 'Duuuuuh', 'Of Course', ':+1::skin-tone-3:'];
-    var noText = ['No', 'Nope', 'Negative', ':thumbsdown::skin-tone-3:'];
+    var yesText = ['Absolutely', 'yessss!', 'Duuuuuh', 'Of Course', ':+1::skin-tone-3:', ':ok_hand::skin-tone-3:'];
+    var noText = ['No', 'Nope', 'Negative', ':thumbsdown::skin-tone-3:', ':poop:'];
     var randomYesText = yesText[Math.floor(Math.random() * yesText.length)];
     var randomNoText = noText[Math.floor(Math.random() * noText.length)];
     var stringifiedTrackInfo = JSON.stringify(trackInfo);
