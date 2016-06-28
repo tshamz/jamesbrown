@@ -95,19 +95,19 @@ controller.storage.teams.all(function(err, teams) {
 // Spotify App ===========================================
 // =======================================================
 
+// When our Spotify access token will expire
+var tokenExpirationEpoch;
+
+var scopes = ['playlist-read-private', 'playlist-read-collaborative', 'playlist-modify-public', 'playlist-modify-private'];
+
+var spotifyApi = new SpotifyWebApi({
+  redirectUri: setup.spotify.redirectUri,
+  clientId: setup.spotify.clientId,
+  clientSecret: setup.spotify.clientSecret
+});
+
 // Wait for Slackbot to finish loading before connecting to Spotify API
 controller.on('rtm_open', function(bot) {
-
-  // When our Spotify access token will expire
-  var tokenExpirationEpoch;
-
-  var scopes = ['playlist-read-private', 'playlist-read-collaborative', 'playlist-modify-public', 'playlist-modify-private'];
-
-  var spotifyApi = new SpotifyWebApi({
-    redirectUri: setup.spotify.redirectUri,
-    clientId: setup.spotify.clientId,
-    clientSecret: setup.spotify.clientSecret
-  });
 
   var authCodeFlow = function() {
     open(spotifyApi.createAuthorizeURL(scopes));
