@@ -30,13 +30,13 @@ if (!setup.slack.clientId || !setup.slack.clientSecret || !setup.server.port) {
 var controller = Botkit.slackbot({
     interactive_replies: true,
     json_file_store: './db_slackapp_bot/',
-    logLevel: 'emergency'
+    // logLevel: 'emergency'
 });
 
 controller.configureSlackApp({
   clientId: setup.slack.clientId,
   clientSecret: setup.slack.clientSecret,
-  scopes: ['bot']
+  scopes: ['bot', 'chat:write:user', 'chat:write:bot']
 });
 
 controller.setupWebserver(setup.server.port, function(err, webserver) {
@@ -99,6 +99,7 @@ controller.storage.teams.all(function(err, teams) {
 var tokenExpirationEpoch;
 
 var scopes = ['playlist-read-private', 'playlist-read-collaborative', 'playlist-modify-public', 'playlist-modify-private'];
+var state = '';
 
 var spotifyApi = new SpotifyWebApi({
   redirectUri: setup.spotify.redirectUri,
@@ -110,7 +111,7 @@ var spotifyApi = new SpotifyWebApi({
 controller.on('rtm_open', function(bot) {
 
   var authCodeFlow = function() {
-    open(spotifyApi.createAuthorizeURL(scopes));
+    open(spotifyApi.createAuthorizeURL(scopes, state));
     console.log('\nAuthorize and enter the resulting code attached to the redirect URI...');
     prompt.start();
     prompt.get(['auth_code'], function (err, result) {
