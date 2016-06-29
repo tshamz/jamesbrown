@@ -30,7 +30,8 @@ if (!setup.slack.clientId || !setup.slack.clientSecret || !setup.server.port) {
 var controller = Botkit.slackbot({
     interactive_replies: true,
     json_file_store: './db_slackapp_bot/',
-    // logLevel: 'emergency'
+    debug: false,
+    log: false
 });
 
 controller.configureSlackApp({
@@ -40,14 +41,21 @@ controller.configureSlackApp({
 });
 
 controller.setupWebserver(setup.server.port, function(err, webserver) {
+  controller.createWebhookEndpoints(controller.webserver);
   controller.createHomepageEndpoint(controller.webserver);
   controller.createOauthEndpoints(controller.webserver, function(err, req, res) {
     if (err) {
       res.status(500).send('ERROR: ' + err);
     } else {
-      res.send('Success!');
+      res.send('Great Success!');
     }
   });
+  console.log('** Starting webserver on port ' + setup.server.port);
+  console.log('** Serving webhook endpoints for Slash commands and outgoing webhooks at: http://MY_HOST:' + setup.server.port + '/slack/receive');
+  console.log('** Serving app landing page at : http://MY_HOST:' + setup.server.port + '/');
+  console.log('** Serving login URL: http://MY_HOST:' + setup.server.port + '/login');
+  console.log('** Serving oauth return endpoint: http://MY_HOST:' + setup.server.port + '/oauth');
+  console.log('\nIf you haven\'t already, authorize your bot by visiting http://MY_HOST:' + setup.server.port + '/login\n');
 });
 
 var _bots = {};
@@ -68,7 +76,8 @@ controller.on('create_bot',function(bot, config) {
           console.log(err);
         } else {
           convo.say('Sup. Thanks for inviting me to the team!');
-          convo.say('If you feel so inclined, you could make a public channel, invite me, add the channel name to the bot-setup.js file, and then I\'ll broadcast updates stuff goes down.');
+          convo.say('If you haven\'t already, you\'ll likely be prompted by me for a Spotify auth code. A browser window should have opened up at some point kicking off the whole process, but if didn\'t see it, you can always restart me and I\' show it to you again.');
+          convo.say('Also, if you feel so inclined, you could make a public channel, invite me, add the channel name to the bot-setup.js file, and then I\'ll broadcast updates stuff goes down.');
         }
       });
     });
@@ -128,9 +137,6 @@ controller.on('rtm_open', function(bot) {
             controller.storage.teams.save(team_data, function(err) {
               spotifyApi.setRefreshToken(team_data.spotifyRefreshToken);
               spotifyApi.setAccessToken(team_data.spotifyAccessToken);
-
-              console.log('\nrefresh token: ' + data.body.refresh_token);
-              console.log('\naccess token: ' + data.body.access_token);
 
               // Save the amount of seconds until the access token expired
               tokenExpirationEpoch = (new Date().getTime() / 1000) + data.body.expires_in;
@@ -239,15 +245,15 @@ var createTrackObject = function(data) {
     return artistObj.name;
   }).join(', ');
   return {
-    "name": data.name,
-    "artist": artists,
-    "album": data.album.name,
-    "artworkUrls": {
-      "medium": data.album.images[1].url,
-      "small": data.album.images[2].url
+    name: data.name,
+    artist: artists,
+    album: data.album.name,
+    artworkUrls: {
+      medium: data.album.images[1].url,
+      small: data.album.images[2].url
     },
-    "formattedTrackTitle": "_" + data.name + "_ by *" + artists + "*",
-    "trackId": data.id
+    formattedTrackTitle: '_' + data.name + '_ by *' + artists + '*',
+    trackId: data.id
   };
 };
 
@@ -276,7 +282,7 @@ var logToConsole = function(userName, song, artists) {
 };
 
 var reorderPlaylist = function(trackInfo, trackPosition, currentTrackPosition) {
-  spotifyApi.reorderTracksInPlaylist(AUTHENTICATED_USER, PLAYLIST_ID, trackPosition, currentTrackPosition + 1, {"range_length": 1}).then(function(data) {
+  spotifyApi.reorderTracksInPlaylist(AUTHENTICATED_USER, PLAYLIST_ID, trackPosition, currentTrackPosition + 1, {'range_length': 1}).then(function(data) {
     logToConsole(userName, trackInfo.name, trackInfo.artists);
   });
 };
@@ -330,7 +336,6 @@ controller.on('interactive_message_callback', function(bot, message) {
         });
     });
   }
-
 });
 
 controller.hears([/search ([\s\S]+)/i], 'direct_message', function(bot, message) {
@@ -440,10 +445,11 @@ controller.hears(['heysup'], 'direct_message,direct_mention,mention', function(b
     channel: message.channel,
     name: 'radio',
   });
-  bot.reply(message, "Hello.");
+  bot.reply(message, 'Hello.');
 });
 
 controller.hears([/[\s\S]+/], 'direct_message', function(bot, message) {
+  console.log(message);
   bot.reply(message, 'Sorry, I don\'t understand that.');
 });
 
