@@ -91,11 +91,6 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ## Acknowledgments
 
-* Hat tip to anyone who's code was used
-* Inspiration
-* etc
-## The Hardest Working Man in Show Business
-
 - botkit: https://github.com/howdyai/botkit
 - spotify api: https://developer.spotify.com/web-api/endpoint-reference/
 - spotify slackbot: https://github.com/markstickley/spotifyslackbot/
