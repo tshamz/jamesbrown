@@ -76,14 +76,14 @@ lt --port 3000 --subdomain [unique identifier]
 
 ## Built With
 
-* Botkit
+* [Botkit](https://github.com/howdyai/botkit)
 
 
 ## Authors
 
 * **Tyler Shambora** - [tshamz](https://github.com/tshamz)
 
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+See also the list of [contributors](https://github.com/BVAccel/Mr-Dynamite/contributors) who participated in this project.
 
 ## License
 
