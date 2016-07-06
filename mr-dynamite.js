@@ -14,6 +14,7 @@ var open                  = require('open');
 var https                 = require('https');
 var prompt                = require('prompt');
 var request               = require('request');
+var localtunnel           = require('localtunnel');
 
 const AUTHENTICATED_USER  = setup.spotify.userName;
 const PLAYLIST_ID         = setup.spotify.playlistId;
@@ -40,6 +41,8 @@ controller.configureSlackApp({
   scopes: ['bot', 'chat:write:user', 'chat:write:bot']
 });
 
+
+
 controller.setupWebserver(setup.server.port, function(err, webserver) {
   controller.createWebhookEndpoints(controller.webserver);
   controller.createHomepageEndpoint(controller.webserver);
@@ -56,6 +59,22 @@ controller.setupWebserver(setup.server.port, function(err, webserver) {
   console.log('** Serving login URL: http://MY_HOST:' + setup.server.port + '/login');
   console.log('** Serving oauth return endpoint: http://MY_HOST:' + setup.server.port + '/oauth');
   console.log('\nIf you haven\'t already, authorize your bot by visiting http://MY_HOST:' + setup.server.port + '/login\n');
+});
+
+var tunnel;
+var setupTunnel = function() {
+  tunnel = localtunnel(setup.server.port, {subdomain: setup.server.subdomain}, function(err, tunnel) {
+    console.log('new tunnel on port: ' + setup.server.port + ' and subdomain: ' + setup.server.subdomain);
+  });
+};
+
+tunnel.on('error', function(err) {
+  console.log(err);
+  setupTunnel();
+});
+
+tunnel.on('close', function() {
+  setupTunnel();
 });
 
 var _bots = {};
