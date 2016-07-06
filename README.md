@@ -80,6 +80,10 @@ lt --port 3000 --subdomain [unique identifier]
 ## Built With
 
 * [Botkit](https://github.com/howdyai/botkit)
+* [Slack api](https://api.slack.com/)
+* [Spotify api](https://developer.spotify.com/web-api/endpoint-reference)
+* [Spotify node web api](https://github.com/thelinmichael/spotify-web-api-node)
+* [Spotify node applescript](https://github.com/andrehaveman/spotify-node-applescript)
 
 
 ## Authors
@@ -92,9 +96,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- botkit: https://github.com/howdyai/botkit
-- spotify api: https://developer.spotify.com/web-api/endpoint-reference/
-- spotify slackbot: https://github.com/markstickley/spotifyslackbot/
-- spotify node-applescript: https://github.com/andrehaveman/spotify-node-applescript
-- example app: https://joshmcarthur.com/2012/08/12/building-on-the-spot-a-spotify-play-queue.html
--
+- [example app](https://joshmcarthur.com/2012/08/12/building-on-the-spot-a-spotify-play-queue.html)
+- [spotify slackbot](https://github.com/markstickley/spotifyslackbot)
