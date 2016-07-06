@@ -448,11 +448,6 @@ controller.hears(['heysup'], 'direct_message,direct_mention,mention', function(b
   bot.reply(message, 'Hello.');
 });
 
-controller.hears([/[\s\S]+/], 'direct_message', function(bot, message) {
-  console.log(message);
-  bot.reply(message, 'Sorry, I don\'t understand that.');
-});
-
 controller.on('rtm_close',function(bot) {
   console.log('** The RTM api just closed');
 });
