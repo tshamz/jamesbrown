@@ -20,5 +20,8 @@
     "request": "^2.72.0",
     "spotify-node-applescript": "^0.2.2",
     "spotify-web-api-node": "^2.3.0"
+  },
+  "devDependencies": {
+    "localtunnel": "^1.8.1"
   }
 }
