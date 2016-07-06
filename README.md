@@ -1,18 +1,10 @@
+![Robot James Brown](https://i.ytimg.com/vi/2b-_tV953PM/maxresdefault.jpg)
+
 # Mr. Dynamite
 
 Mr. Dynamite is a Slackbot who can search and add songs to a designated Spotify playlist all from within the comfort of your team's Slack instance. It is a great way to facilitate the playing of music throughout the office.
 
-![Robot James Brown](https://i.ytimg.com/vi/2b-_tV953PM/maxresdefault.jpg)
-
 ## Getting Started
-
-You will need to make sure you have the following items prepared before getting started:
-
-1. Designated computer for playing music from
-2. Spotify account w/ designated playlist (you'll need your username and the playlist id)
-3. Spotify app with a client id and client secret
-4. Slack app with client id and client
-5. Slack channel for the bot to report into (optional)
 
 ### Prerequisities
 
@@ -21,6 +13,14 @@ You'll need to have localtunnel installed globally on your machine (which itself
 ```sh
 npm install -g localtunnel
 ```
+
+You'll also need to make sure you have the following items prepared before getting started:
+
+1. Designated computer for playing music from
+2. Spotify account w/ designated playlist (you'll need your username and the playlist id)
+3. Spotify app with a client id and client secret
+4. Slack app with client id and client
+5. Slack channel for the bot to report into (optional)
 
 ### Installing
 
@@ -83,11 +83,9 @@ lt --port 3000 --subdomain [unique identifier]
 
 * **Tyler Shambora** - [tshamz](https://github.com/tshamz)
 
-See also the list of [contributors](https://github.com/BVAccel/Mr-Dynamite/contributors) who participated in this project.
-
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details
 
 ## Acknowledgments
 
@@ -96,3 +94,4 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 - spotify slackbot: https://github.com/markstickley/spotifyslackbot/
 - spotify node-applescript: https://github.com/andrehaveman/spotify-node-applescript
 - example app: https://joshmcarthur.com/2012/08/12/building-on-the-spot-a-spotify-play-queue.html
+-
