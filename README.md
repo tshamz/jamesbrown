@@ -1,6 +1,5 @@
-![Robot James Brown](https://i.ytimg.com/vi/2b-_tV953PM/maxresdefault.jpg)
-
 # Mr. Dynamite
+![Robot James Brown](https://i.ytimg.com/vi/2b-_tV953PM/maxresdefault.jpg)
 
 Mr. Dynamite is a Slackbot who can search and add songs to a designated Spotify playlist all from within the comfort of your team's Slack instance. It is a great way to facilitate the playing of music throughout the office.
 
