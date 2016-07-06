@@ -1,7 +1,7 @@
 # Mr. Dynamite
 
 <p align="center">
-  <img src="http://www-tc.pbs.org/wnet/americanmasters/files/2008/10/610_jamesbrown_soulsurvivor.jpg" />
+  <img widht="100%" src="http://www-tc.pbs.org/wnet/americanmasters/files/2008/10/610_jamesbrown_soulsurvivor.jpg" />
 </p>
 
 
