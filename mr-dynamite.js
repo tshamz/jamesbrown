@@ -61,22 +61,6 @@ controller.setupWebserver(setup.server.port, function(err, webserver) {
   console.log('\nIf you haven\'t already, authorize your bot by visiting http://MY_HOST:' + setup.server.port + '/login\n');
 });
 
-var tunnel;
-var setupTunnel = function() {
-  tunnel = localtunnel(setup.server.port, {subdomain: setup.server.subdomain}, function(err, tunnel) {
-    console.log('new tunnel on port: ' + setup.server.port + ' and subdomain: ' + setup.server.subdomain);
-  });
-};
-
-tunnel.on('error', function(err) {
-  console.log(err);
-  setupTunnel();
-});
-
-tunnel.on('close', function() {
-  setupTunnel();
-});
-
 var _bots = {};
 var trackBot = function(bot) {
   _bots[bot.config.token] = bot;
@@ -120,11 +104,12 @@ controller.storage.teams.all(function(err, teams) {
   }
 });
 
-// Spotify App ===========================================
+// Spotify App & localtunnel =============================
 // =======================================================
 
 // When our Spotify access token will expire
 var tokenExpirationEpoch;
+
 
 var scopes = ['playlist-read-private', 'playlist-read-collaborative', 'playlist-modify-public', 'playlist-modify-private'];
 var state = '';
@@ -137,6 +122,23 @@ var spotifyApi = new SpotifyWebApi({
 
 // Wait for Slackbot to finish loading before connecting to Spotify API
 controller.on('rtm_open', function(bot) {
+  console.log('** The RTM api just opened');
+
+  var setupTunnel = function() {
+    localtunnel(setup.server.port, {subdomain: setup.server.subdomain}, function(err, tunnel) {
+      console.log('new tunnel on port: ' + setup.server.port + ' and subdomain: ' + setup.server.subdomain);
+      tunnel.on('error', function(err) {
+        console.log('tunnel error.');
+        setupTunnel();
+      });
+      tunnel.on('close', function() {
+        console.log('tunnel closed.');
+        setupTunnel();
+      });
+    });
+  };
+
+  setupTunnel();
 
   var authCodeFlow = function() {
     open(spotifyApi.createAuthorizeURL(scopes, state));
@@ -296,19 +298,31 @@ var getRealNameFromId = function(bot, userId) {
   return deferred.promise;
 };
 
-var logToConsole = function(userName, song, artists) {
-  console.log(userName + ' just added: ' + song + ' by ' + artists.join(', '));
-};
-
 var reorderPlaylist = function(trackInfo, trackPosition, currentTrackPosition) {
-  spotifyApi.reorderTracksInPlaylist(AUTHENTICATED_USER, PLAYLIST_ID, trackPosition, currentTrackPosition + 1, {'range_length': 1}).then(function(data) {
-    logToConsole(userName, trackInfo.name, trackInfo.artists);
-  });
+  spotifyApi.reorderTracksInPlaylist(AUTHENTICATED_USER, PLAYLIST_ID, trackPosition, currentTrackPosition + 1, {'range_length': 1});
 };
 
 var addTrack = function(trackInfo, currentTrackPosition) {
-  spotifyApi.addTracksToPlaylist(AUTHENTICATED_USER, PLAYLIST_ID, 'spotify:track:' + trackInfo.trackId, {position: currentTrackPosition + 1}).then(function(response) {
-    logToConsole(userName, trackInfo.name, trackInfo.artists);
+  spotifyApi.addTracksToPlaylist(AUTHENTICATED_USER, PLAYLIST_ID, 'spotify:track:' + trackInfo.trackId, {position: currentTrackPosition + 1});
+};
+
+var hotAdd = function(bot, trackInfo, user) {
+  getRealNameFromId(bot, user).then(function(userName) {
+    spotifyApi.getPlaylist(AUTHENTICATED_USER, PLAYLIST_ID).then(function(data) {
+      var playlistOrder = data.body.tracks.items.map(function(item) {
+        return item.track.id;
+      });
+      Spotify.getState(function(err, state) {
+        var currentTrackId = normalizeTrackId(state.track_id);
+        var currentTrackPosition = playlistOrder.indexOf(currentTrackId);
+        if (playlistOrder.indexOf(trackInfo.trackId) !== -1) {
+          var trackPosition = playlistOrder.indexOf(trackInfo.trackId);
+          reorderPlaylist(trackInfo, trackPosition, currentTrackPosition);
+        } else {
+          addTrack(trackInfo, currentTrackPosition);
+        }
+      });
+    });
   });
 };
 
@@ -334,25 +348,24 @@ controller.on('interactive_message_callback', function(bot, message) {
   if (message.callback_id === 'add_this_track') {
     getRealNameFromId(bot, message.user).then(function(userName) {
       var trackInfo = JSON.parse(action.value);
-      spotifyApi.getPlaylist(AUTHENTICATED_USER, PLAYLIST_ID)
-        .then(function(data) {
-          var playlistOrder = data.body.tracks.items.map(function(item) {
-            return item.track.id;
-          });
-          Spotify.getState(function(err, state) {
-            var currentTrackId = normalizeTrackId(state.track_id);
-            var currentTrackPosition = playlistOrder.indexOf(currentTrackId);
-            if (playlistOrder.indexOf(trackInfo.trackId) !== -1) {
-              var trackPosition = playlistOrder.indexOf(trackInfo.trackId);
-              bot.replyInteractive(message, '*Moving ' + trackInfo.formattedTrackTitle + ' to the top of the queue.*');
-              reorderPlaylist(trackInfo, trackPosition, currentTrackPosition);
-            } else {
-              bot.replyInteractive(message, trackInfo.formattedTrackTitle + ' added to playlist.');
-              bot.say(responses.addedToPlaylist(REPORTING_CHANNEL, userName, trackInfo));
-              addTrack(trackInfo, currentTrackPosition);
-            }
-          });
+      spotifyApi.getPlaylist(AUTHENTICATED_USER, PLAYLIST_ID).then(function(data) {
+        var playlistOrder = data.body.tracks.items.map(function(item) {
+          return item.track.id;
         });
+        Spotify.getState(function(err, state) {
+          var currentTrackId = normalizeTrackId(state.track_id);
+          var currentTrackPosition = playlistOrder.indexOf(currentTrackId);
+          if (playlistOrder.indexOf(trackInfo.trackId) !== -1) {
+            var trackPosition = playlistOrder.indexOf(trackInfo.trackId);
+            bot.replyInteractive(message, 'Moving ' + trackInfo.formattedTrackTitle + ' to the top of the queue.');
+            reorderPlaylist(trackInfo, trackPosition, currentTrackPosition);
+          } else {
+            bot.replyInteractive(message, trackInfo.formattedTrackTitle + ' added to playlist.');
+            bot.say(responses.addedToPlaylist(REPORTING_CHANNEL, userName, trackInfo));
+            addTrack(trackInfo, currentTrackPosition);
+          }
+        });
+      });
     });
   }
 });
@@ -385,15 +398,21 @@ controller.hears([/search ([\s\S]+)/i], 'direct_message', function(bot, message)
 });
 
 
-controller.hears([/add .*track[:\/](\d\w*)/i], 'direct_message', function(bot, message) {
+controller.hears([/add .*track[:\/](\d\w*)(>\s.*)?/i], 'direct_message', function(bot, message) {
 
   var trackId = normalizeTrackId(message.match[1]);
+  var flag = (message.match[2] === undefined) ? false : message.match[2].substr(2);
 
   spotifyApi.getTrack(trackId).then(function(response) {
     var trackInfo = createTrackObject(response.body);
-    getRealNameFromId(bot, message.user).then(function(userName) {
-      bot.reply(message, responses.proceed(trackInfo));
-    });
+    if (flag == '-f') {  //bypass the confirmation prompt
+      hotAdd(bot, trackInfo, message.user);
+      bot.reply(message, 'Bypassing prompt...\nAttempting to add ' + trackInfo.formattedTrackTitle);
+    } else {
+      getRealNameFromId(bot, message.user).then(function(userName) {
+        bot.reply(message, responses.proceed(trackInfo));
+      });
+    }
   }, function(err) {
     bot.reply(message, 'Looks like this error just happened: `' + err.message + '`');
   });
@@ -469,4 +488,9 @@ controller.hears(['heysup'], 'direct_message,direct_mention,mention', function(b
 
 controller.on('rtm_close',function(bot) {
   console.log('** The RTM api just closed');
+  bot.startRTM(function(err) {
+    if (!err) {
+      trackBot(bot);
+    }
+  });
 });
