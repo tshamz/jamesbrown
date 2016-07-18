@@ -12,6 +12,7 @@ var q                     = require('q');
 var os                    = require('os');
 var open                  = require('open');
 var https                 = require('https');
+var ngrok                 = require('ngrok');
 var prompt                = require('prompt');
 var request               = require('request');
 var localtunnel           = require('localtunnel');
@@ -125,13 +126,13 @@ controller.on('rtm_open', function(bot) {
   console.log('** The RTM api just opened');
 
   var setupTunnel = function() {
-    localtunnel(setup.server.port, {subdomain: setup.server.subdomain}, function(err, tunnel) {
+    var theTunnel = localtunnel(setup.server.port, {subdomain: setup.server.subdomain}, function(err, tunnel) {
       console.log('new tunnel on port: ' + setup.server.port + ' and subdomain: ' + setup.server.subdomain);
-      tunnel.on('error', function(err) {
+      theTunnel.on('error', function(err) {
         console.log('tunnel error.');
         setupTunnel();
       });
-      tunnel.on('close', function() {
+      theTunnel.on('close', function() {
         console.log('tunnel closed.');
         setupTunnel();
       });
@@ -308,6 +309,7 @@ var addTrack = function(trackInfo, currentTrackPosition) {
 
 var hotAdd = function(bot, trackInfo, user) {
   getRealNameFromId(bot, user).then(function(userName) {
+    console.log(userName + ' added: ' + trackInfo.name + ' by ' + trackInfo.artist);
     spotifyApi.getPlaylist(AUTHENTICATED_USER, PLAYLIST_ID).then(function(data) {
       var playlistOrder = data.body.tracks.items.map(function(item) {
         return item.track.id;
@@ -348,6 +350,7 @@ controller.on('interactive_message_callback', function(bot, message) {
   if (message.callback_id === 'add_this_track') {
     getRealNameFromId(bot, message.user).then(function(userName) {
       var trackInfo = JSON.parse(action.value);
+      console.log(userName + ' added: ' + trackInfo.name + ' by ' + trackInfo.artist);
       spotifyApi.getPlaylist(AUTHENTICATED_USER, PLAYLIST_ID).then(function(data) {
         var playlistOrder = data.body.tracks.items.map(function(item) {
           return item.track.id;
