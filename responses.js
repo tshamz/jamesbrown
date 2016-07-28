@@ -64,8 +64,8 @@ module.exports = {
   detail: function(trackInfo) {
     return {
       attachments: [{
-        fallback: '${trackInfo.formattedTrackTitle} from the album - *${trackInfo.album}*',
-        text: 'Title: _${trackInfo.name}_\nArtist: *${trackInfo.artist}*\nAlbum: *${trackInfo.album}*\nSpotify ID: ${trackInfo.trackId}',
+        fallback: `${trackInfo.formattedTrackTitle} from the album - *${trackInfo.album}*`,
+        text: `Title: _${trackInfo.name}_\nArtist: *${trackInfo.artist}*\nAlbum: *${trackInfo.album}*\nSpotify ID: ${trackInfo.trackId}`,
         color: '#23CF5F',
         thumb_url: trackInfo.artworkUrls.small,
         mrkdwn_in: ['text']
