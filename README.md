@@ -1,7 +1,3 @@
-wip - more updates coming.
-
-===
-
 # Mr. Dynamite
 
 <p align="center">
