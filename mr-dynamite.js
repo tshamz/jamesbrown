@@ -10,12 +10,13 @@ const Spotify               = require('spotify-node-applescript');
 
 const q                     = require('q');
 const os                    = require('os');
+const ngrok                 = require('ngrok');
 const open                  = require('open');
 const https                 = require('https');
 const ngrok                 = require('ngrok');
 const prompt                = require('prompt');
 const request               = require('request');
-const localtunnel           = require('localtunnel');
+// const localtunnel           = require('localtunnel');
 
 const AUTHENTICATED_USER  = setup.spotify.userName;
 const PLAYLIST_ID         = setup.spotify.playlistId;
@@ -101,10 +102,10 @@ controller.storage.teams.all(function(err, teams) {
   }
 });
 
-// Spotify App & localtunnel =============================
+// Localtunnel ===========================================
 // =======================================================
 
-var setupTunnel = function(bot) {
+var setupLocaltunnel = function(bot) {
   var tunnel = localtunnel(setup.server.port, {subdomain: setup.server.subdomain}, function(err, tunnel) {
     console.log('new tunnel on port: ' + setup.server.port + ' and subdomain: ' + setup.server.subdomain);
   });
@@ -121,7 +122,20 @@ var setupTunnel = function(bot) {
   });
 };
 
-// Spotify App & localtunnel =============================
+var setupNgrok = function() {
+  ngrok.connect({
+      proto: 'http',
+      addr: setup.server.port,
+      // subdomain: setup.server.subdomain,
+      authtoken: '7Wmb6E7EvQQrsCZ3fkXXn_3SQF2UiuhbyRGcDnUBfh4'
+  }, function (err, url) {
+    console.log('tunnel error: ' + err);
+    ngrok.disconnect()
+    setupNgrok();
+  });
+};
+
+// Spotify App ===========================================
 // =======================================================
 
 // When our Spotify access token will expire
@@ -139,7 +153,7 @@ var spotifyApi = new SpotifyWebApi({
 controller.on('rtm_open', function(bot) {
   console.log('** The RTM api just opened');
 
-  setupTunnel(bot);
+  setupNgrok();
 
   // Wait for the RTM to open so the console prompts don't get tangled up with one another
 
