@@ -1,21 +1,21 @@
 // Setup =================================================
 // =======================================================
 
-let setup                 = require('./bot-setup.js');
-let responses             = require('./responses.js');
+const setup                 = require('./bot-setup.js');
+const responses             = require('./responses.js');
 
-let Botkit                = require('botkit');
-let SpotifyWebApi         = require('spotify-web-api-node');
-let Spotify               = require('spotify-node-applescript');
+const Botkit                = require('botkit');
+const SpotifyWebApi         = require('spotify-web-api-node');
+const Spotify               = require('spotify-node-applescript');
 
-let q                     = require('q');
-let os                    = require('os');
-let open                  = require('open');
-let https                 = require('https');
-let ngrok                 = require('ngrok');
-let prompt                = require('prompt');
-let request               = require('request');
-let localtunnel           = require('localtunnel');
+const q                     = require('q');
+const os                    = require('os');
+const open                  = require('open');
+const https                 = require('https');
+const ngrok                 = require('ngrok');
+const prompt                = require('prompt');
+const request               = require('request');
+const localtunnel           = require('localtunnel');
 
 const AUTHENTICATED_USER  = setup.spotify.userName;
 const PLAYLIST_ID         = setup.spotify.playlistId;
@@ -136,6 +136,7 @@ var spotifyApi = new SpotifyWebApi({
 });
 
 controller.on('rtm_open', function(bot) {
+  console.log('** The RTM api just opened');
 
   setupTunnel(bot);
 
@@ -497,5 +498,5 @@ controller.on('rtm_close',function(bot) {
         trackBot(bot);
       }
     });
-  }, 5000);
+  }, 30000);
 });
