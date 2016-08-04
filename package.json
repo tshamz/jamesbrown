@@ -22,6 +22,7 @@
     "spotify-web-api-node": "^2.3.0"
   },
   "devDependencies": {
-    "localtunnel": "^1.8.1"
+    "localtunnel": "^1.8.1",
+    "ngrok": "^2.2.1"
   }
 }
