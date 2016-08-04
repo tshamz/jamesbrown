@@ -1,21 +1,21 @@
 // Setup =================================================
 // =======================================================
 
-var setup                 = require('./bot-setup.js');
-var responses             = require('./responses.js');
+let setup                 = require('./bot-setup.js');
+let responses             = require('./responses.js');
 
-var Botkit                = require('botkit');
-var SpotifyWebApi         = require('spotify-web-api-node');
-var Spotify               = require('spotify-node-applescript');
+let Botkit                = require('botkit');
+let SpotifyWebApi         = require('spotify-web-api-node');
+let Spotify               = require('spotify-node-applescript');
 
-var q                     = require('q');
-var os                    = require('os');
-var open                  = require('open');
-var https                 = require('https');
-var ngrok                 = require('ngrok');
-var prompt                = require('prompt');
-var request               = require('request');
-var localtunnel           = require('localtunnel');
+let q                     = require('q');
+let os                    = require('os');
+let open                  = require('open');
+let https                 = require('https');
+let ngrok                 = require('ngrok');
+let prompt                = require('prompt');
+let request               = require('request');
+let localtunnel           = require('localtunnel');
 
 const AUTHENTICATED_USER  = setup.spotify.userName;
 const PLAYLIST_ID         = setup.spotify.playlistId;

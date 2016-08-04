@@ -1,27 +1,12 @@
-// italic
-var i = function(value) {
-  return '_' + value + '_';
-};
-
-// bold
-var b = function(value) {
-  return '*' + value + '*';
-};
-
-// code
-var c = function(value) {
-  return '`' + value + '`';
-};
-
 module.exports = {
   addedToPlaylist: function(channelId, userName, trackInfo) {
     return {
       channel: channelId,
-      text: b(userName) + ' just added a song to the playlist.',
+      text: '*userName* just added a song to the playlist.',
       mrkdwn_in: ['text'],
       attachments: [{
-        fallback: trackInfo.formattedTrackTitle + ' from the album - ' + b(trackInfo.album),
-        text: 'Title: ' + i(trackInfo.name) + '\nArtist: ' + b(trackInfo.artist) + '\nAlbum: ' + b(trackInfo.album),
+        fallback: `${trackInfo.formattedTrackTitle} from the album - *${trackInfo.album}*`,
+        text: `Title:  _${trackInfo.name}_\nArtist: *${trackInfo.artist}*\nAlbum: *${trackInfo.album}*`,
         color: '#23CF5F',
         thumb_url: trackInfo.artworkUrls.small,
         mrkdwn_in: ['text']
@@ -29,18 +14,18 @@ module.exports = {
     };
   },
   help: function() {
-    var canSay = b('up next') + ' - ' + i('I\'ll tell you what the next three tracks are') + '\n' +
-                 b('info') + ' - ' + i('I\'ll tell you about this track') + '\n' +
-                 b('detail') + ' - ' + i('I\'ll tell you more about this track');
-    var add = 'If you\'d like to add a track to the queue, direct message me:' + '\n\n' +
-              '\t' + c('add [Spotify URI]') + ' ' + i('(without the square brackes)') + '\n\n' +
-              'where ' + c('[Spotify URI]') + 'can be one of the following:' + '\n\n' +
-              '\t• a Spotify URI - e.g. Spotify:track:' + b('[track id]') + '\n' +
-              '\t• a Spotify song link - e.g. https://open.Spotifycom/ ' + b('[track id]');
-    var search = 'If you\'d like to search for a track to add, direct message:' + '\n\n' +
-                 '\t' + c('search [search query]') + ' ' +  i('(again, without the square brackets)') + '\n\n' +
+    var canSay = '*up next* - _I\'ll tell you what the next three tracks are_\n' +
+                 '*info* - _I\'ll tell you about this track_\n' +
+                 '*detail* - _I\'ll tell you more about this track_';
+    var add = 'If you\'d like to add a track to the queue, direct message me:\n\n' +
+              '\t`add [Spotify URI]` _(without the square brackes)\n\n' +
+              'where `[Spotify URI]` can be one of the following:\n\n' +
+              '\t• a Spotify URI - e.g. Spotify:track:*[track id]*\n' +
+              '\t• a Spotify song link - e.g. https://open.Spotifycom/ *[track id]*';
+    var search = 'If you\'d like to search for a track to add, direct message:\n\n' +
+                 '\t`search [search query]` _(again, without the square brackets)_\n\n' +
                  'and I\'ll show you the top 3 results from Spotify. You\'ll then be able to either add one of the results or start over and search again.';
-    var protip = b('PROTIP:') + ' right click on a track in Spotify to copy either a song URI or link';
+    var protip = '*PROTIP:* right click on a track in Spotify to copy either a song URI or link';
     return {
       attachments: [{
         title: 'Commands',
@@ -51,7 +36,7 @@ module.exports = {
         title: 'Adding Music:',
         fallback: add,
         text: add,
-        'footer': protip,
+        footer: protip,
         mrkdwn_in: ['text', 'footer']
       }, {
         title: 'Searching Music:',
@@ -76,12 +61,12 @@ module.exports = {
     };
   },
   info: function(track) {
-    return 'This is ' + i(track.name) + ' by ' + b(track.artist);
+    return `This is _${track.name}_ by *${track.artist}*`;
   },
   upNext: function(nextTracks) {
     var responseString = '';
     nextTracks.forEach(function(track, index) {
-      responseString += index + 1 + '. ' + i(track.name) + ' by ' + b(track.artist) + '\n';
+      responseString += `${index + 1}. _${track.name}_ by *${track.artist}* \n`;
     });
     return {
       attachments: [{
@@ -93,7 +78,7 @@ module.exports = {
     };
   },
   proceed: function(trackInfo) {
-    var yesText = ['Absolutely', 'yessss!', 'Duuuuuh', 'Of Course', ':+1::skin-tone-3:', ':ok_hand::skin-tone-3:'];
+    var yesText = ['Yes', 'Absolutely', 'yesss!', 'Duuuuuh', 'Of Course', ':+1::skin-tone-3:', ':ok_hand::skin-tone-3:'];
     var noText = ['No', 'Nope', 'Negative', ':thumbsdown::skin-tone-3:', ':poop:'];
     var randomYesText = yesText[Math.floor(Math.random() * yesText.length)];
     var randomNoText = noText[Math.floor(Math.random() * noText.length)];
@@ -103,7 +88,7 @@ module.exports = {
       attachments: [{
         fallback: trackInfo.formattedTrackTitle,
         callback_id: 'add_this_track',
-        pretext: b('It looks like you\'re trying to add:'),
+        pretext: '*It looks like you\'re trying to add:*',
         color: '#23CF5F',
         thumb_url: trackInfo.artworkUrls.medium,
         attachment_type: 'default',
