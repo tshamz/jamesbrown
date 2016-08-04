@@ -129,25 +129,25 @@ var setupNgrok = function() {
     authtoken: '7Wmb6E7EvQQrsCZ3fkXXn_3SQF2UiuhbyRGcDnUBfh4'
   }, function (err, url) {
     if (err) {
-      console.log('error initializing tunnel!')
+      console.log('error initializing tunnel!');
       process.exit(1);
     }
-    console.log(`new tunnel: ${url}`);
+    console.log('new tunnel: ' + url);
   });
 
   ngrok.once('connect', function (url) {
     console.log('connected!');
-  };
+  });
 
   ngrok.once('disconnect"', function (url) {
     console.log('disconnected!');
-  };
+  });
 
   ngrok.once('error', function (url) {
     console.log('error!');
     ngrok.disconnect();
     setupNgrok();
-  };
+  });
 };
 
 // Spotify App ===========================================
