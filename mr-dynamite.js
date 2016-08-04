@@ -117,6 +117,7 @@ var setupTunnel = function(bot) {
   tunnel.on('close', function() {
     console.log('tunnel closed.');
     bot.closeRTM();
+    process.exit(1);
   });
 };
 
@@ -490,13 +491,13 @@ controller.hears(['heysup'], 'direct_message,direct_mention,mention', function(b
   bot.reply(message, 'Hello.');
 });
 
-controller.on('rtm_close',function(bot) {
-  console.log('** The RTM api just closed');
-  setTimeout(function() {
-    bot.startRTM(function(err) {
-      if (!err) {
-        trackBot(bot);
-      }
-    });
-  }, 30000);
-});
+// controller.on('rtm_close',function(bot) {
+//   console.log('** The RTM api just closed');
+//   setTimeout(function() {
+//     bot.startRTM(function(err) {
+//       if (!err) {
+//         trackBot(bot);
+//       }
+//     });
+//   }, 30000);
+// });
