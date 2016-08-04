@@ -19,9 +19,7 @@
     "q": "^1.4.1",
     "request": "^2.72.0",
     "spotify-node-applescript": "^0.2.2",
-    "spotify-web-api-node": "^2.3.0"
-  },
-  "devDependencies": {
+    "spotify-web-api-node": "^2.3.0",
     "localtunnel": "^1.8.1",
     "ngrok": "^2.2.1"
   }

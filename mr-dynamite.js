@@ -10,7 +10,6 @@ const Spotify               = require('spotify-node-applescript');
 
 const q                     = require('q');
 const os                    = require('os');
-const ngrok                 = require('ngrok');
 const open                  = require('open');
 const https                 = require('https');
 const ngrok                 = require('ngrok');
@@ -130,7 +129,7 @@ var setupNgrok = function() {
       authtoken: '7Wmb6E7EvQQrsCZ3fkXXn_3SQF2UiuhbyRGcDnUBfh4'
   }, function (err, url) {
     console.log('tunnel error: ' + err);
-    ngrok.disconnect()
+    ngrok.disconnect();
     setupNgrok();
   });
 };
