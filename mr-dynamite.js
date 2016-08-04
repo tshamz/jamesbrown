@@ -123,15 +123,31 @@ var setupLocaltunnel = function(bot) {
 
 var setupNgrok = function() {
   ngrok.connect({
-      proto: 'http',
-      addr: setup.server.port,
-      // subdomain: setup.server.subdomain,
-      authtoken: '7Wmb6E7EvQQrsCZ3fkXXn_3SQF2UiuhbyRGcDnUBfh4'
+    proto: 'http',
+    addr: setup.server.port,
+    // subdomain: setup.server.subdomain,
+    authtoken: '7Wmb6E7EvQQrsCZ3fkXXn_3SQF2UiuhbyRGcDnUBfh4'
   }, function (err, url) {
-    console.log('tunnel error: ' + err);
+    if (err) {
+      console.log('error initializing tunnel!')
+      process.exit(1);
+    }
+    console.log(`new tunnel: ${url}`);
+  });
+
+  ngrok.once('connect', function (url) {
+    console.log('connected!');
+  };
+
+  ngrok.once('disconnect"', function (url) {
+    console.log('disconnected!');
+  };
+
+  ngrok.once('error', function (url) {
+    console.log('error!');
     ngrok.disconnect();
     setupNgrok();
-  });
+  };
 };
 
 // Spotify App ===========================================
