@@ -1,4 +1,7 @@
 module.exports = {
+  welcome: function() {
+    return 'Sup. Thanks for inviting me to the team!\n\nIf you haven\'t already, you\'ll likely be prompted by me for a Spotify auth code. A browser window should have opened up at some point kicking off the whole process, but if didn\'t see it, you can always restart me and I\' show it to you again.\n\nAlso, if you feel so inclined, you could make a public channel, invite me, add the channel name to the bot-setup.js file, and then I\'ll broadcast updates stuff goes down.';
+  },
   addedToPlaylist: function(channelId, userName, trackInfo) {
     return {
       channel: channelId,

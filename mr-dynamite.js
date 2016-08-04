@@ -79,9 +79,7 @@ controller.on('create_bot',function(bot, config) {
         if (err) {
           console.log(err);
         } else {
-          convo.say('Sup. Thanks for inviting me to the team!');
-          convo.say('If you haven\'t already, you\'ll likely be prompted by me for a Spotify auth code. A browser window should have opened up at some point kicking off the whole process, but if didn\'t see it, you can always restart me and I\' show it to you again.');
-          convo.say('Also, if you feel so inclined, you could make a public channel, invite me, add the channel name to the bot-setup.js file, and then I\'ll broadcast updates stuff goes down.');
+          convo.say(responses.welcome);
         }
       });
     });
@@ -108,9 +106,29 @@ controller.storage.teams.all(function(err, teams) {
 // Spotify App & localtunnel =============================
 // =======================================================
 
+var setupTunnel = function() {
+  var tunnel = localtunnel(setup.server.port, {subdomain: setup.server.subdomain}, function(err, tunnel) {
+    console.log('new tunnel on port: ' + setup.server.port + ' and subdomain: ' + setup.server.subdomain);
+  });
+
+  tunnel.on('error', function(err) {
+    console.log('tunnel error: ' + err);
+    tunnel.close();
+  });
+
+  tunnel.on('close', function() {
+    console.log('tunnel closed.');
+    setupTunnel();
+  });
+};
+
+setupTunnel();
+
+// Spotify App & localtunnel =============================
+// =======================================================
+
 // When our Spotify access token will expire
 var tokenExpirationEpoch;
-
 
 var scopes = ['playlist-read-private', 'playlist-read-collaborative', 'playlist-modify-public', 'playlist-modify-private'];
 var state = '';
@@ -121,25 +139,9 @@ var spotifyApi = new SpotifyWebApi({
   clientSecret: setup.spotify.clientSecret
 });
 
-// Wait for Slackbot to finish loading before connecting to Spotify API
 controller.on('rtm_open', function(bot) {
-  console.log('** The RTM api just opened');
 
-  var setupTunnel = function() {
-    var theTunnel = localtunnel(setup.server.port, {subdomain: setup.server.subdomain}, function(err, tunnel) {
-      console.log('new tunnel on port: ' + setup.server.port + ' and subdomain: ' + setup.server.subdomain);
-      theTunnel.on('error', function(err) {
-        console.log('tunnel error.');
-        setupTunnel();
-      });
-      theTunnel.on('close', function() {
-        console.log('tunnel closed.');
-        setupTunnel();
-      });
-    });
-  };
-
-  setupTunnel();
+  // Wait for the RTM to open so the console prompts don't get tangled up with one another
 
   var authCodeFlow = function() {
     open(spotifyApi.createAuthorizeURL(scopes, state));
@@ -487,6 +489,10 @@ controller.hears(['heysup'], 'direct_message,direct_mention,mention', function(b
     name: 'radio',
   });
   bot.reply(message, 'Hello.');
+});
+
+controller.on('rtm_open', function(bot) {
+
 });
 
 controller.on('rtm_close',function(bot) {
