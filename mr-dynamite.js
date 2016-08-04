@@ -42,8 +42,6 @@ controller.configureSlackApp({
   scopes: ['bot', 'chat:write:user', 'chat:write:bot']
 });
 
-
-
 controller.setupWebserver(setup.server.port, function(err, webserver) {
   controller.createWebhookEndpoints(controller.webserver);
   controller.createHomepageEndpoint(controller.webserver);
@@ -106,7 +104,7 @@ controller.storage.teams.all(function(err, teams) {
 // Spotify App & localtunnel =============================
 // =======================================================
 
-var setupTunnel = function() {
+var setupTunnel = function(bot) {
   var tunnel = localtunnel(setup.server.port, {subdomain: setup.server.subdomain}, function(err, tunnel) {
     console.log('new tunnel on port: ' + setup.server.port + ' and subdomain: ' + setup.server.subdomain);
   });
@@ -118,11 +116,9 @@ var setupTunnel = function() {
 
   tunnel.on('close', function() {
     console.log('tunnel closed.');
-    setupTunnel();
+    bot.closeRTM();
   });
 };
-
-setupTunnel();
 
 // Spotify App & localtunnel =============================
 // =======================================================
@@ -140,6 +136,8 @@ var spotifyApi = new SpotifyWebApi({
 });
 
 controller.on('rtm_open', function(bot) {
+
+  setupTunnel(bot);
 
   // Wait for the RTM to open so the console prompts don't get tangled up with one another
 
@@ -491,15 +489,13 @@ controller.hears(['heysup'], 'direct_message,direct_mention,mention', function(b
   bot.reply(message, 'Hello.');
 });
 
-controller.on('rtm_open', function(bot) {
-
-});
-
 controller.on('rtm_close',function(bot) {
   console.log('** The RTM api just closed');
-  bot.startRTM(function(err) {
-    if (!err) {
-      trackBot(bot);
-    }
-  });
+  setTimeout(function() {
+    bot.startRTM(function(err) {
+      if (!err) {
+        trackBot(bot);
+      }
+    });
+  }, 5000);
 });
