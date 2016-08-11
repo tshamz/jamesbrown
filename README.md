@@ -11,19 +11,14 @@ Mr. Dynamite is a Slackbot who can search and add songs to a designated Spotify 
 
 ### Prerequisities
 
-You'll need to have localtunnel installed globally on your machine (which itself requires node and npm to be installed). Install it by running
-
-```sh
-npm install -g localtunnel
-```
-
-You'll also need to make sure you have the following items prepared before getting started:
+You'll need to make sure you have the following items prepared before getting started:
 
 1. Designated computer for playing music from
 2. Spotify account w/ designated playlist (you'll need your username and the playlist id)
 3. Spotify app with a client id and client secret
 4. Slack app with client id and client
 5. Slack channel for the bot to report into (optional)
+6. An account and access token from [ngrok](https://ngrok.com)
 
 ### Installing
 
@@ -33,7 +28,8 @@ After cloning the repo, you'll want to create a config file with all the informa
 module.exports = {
   server: {
     port: 3000,
-    subdomain: '[UNIQUE IDENTIFIER]'
+    subdomain: null,
+    ngrokToken: '[NGROK ACCESS TOKEN]'
   },
   slack: {
     clientId: '[SLACK APP CLIENT ID]',
@@ -50,7 +46,7 @@ module.exports = {
 };
 ```
 
-NOTE: [unique identifier] is a subdomain to identify your app by. You'll then enter https://[unique identifier].localtunnel.me/slack/receive as the request URL for your app's Interactive Messages.
+NOTE: You'll need to go to ngrok.com and sign up for an account in order to get an access token. If you'd like to use ngrok's free option, you'll have to update your slack interactive messages request URL to the random subdomain ngrok produces for you every time you start up the bot. If you'd like to use a custom subdomain (which frees you from having to constantly update your interactive messages request URL), you'll need to purchase at least the basic plan from ngrok, set up a custom subdomain, use that custom domain as your interactive messages request URL, and then update the subdomain attribute in the config file.
 
 ### Redirect URIs
 
@@ -58,7 +54,7 @@ Both apps require you to define callback URIs when first setting up the apps. In
 
 ### Bot Users & Interactive Messages
 
-You'll also want to add a bot user for the Slack app (I named mine @jamesbrown, naturally), as well as enabling Interactive Messages. Because Interactive Messages require that your request URL use the https protocol, but our server and subsequent request URL at /slack/receive are running locally, we're going to leverage localtunnel to make sure everything runs smoothly. NOTE: The tunnel is created and started by the bot, but has a tendency to go out often, requiring you to restart the bot.
+You'll also want to add a bot user for the Slack app (I named mine @jamesbrown, naturally), as well as enabling Interactive Messages. Because Interactive Messages require that your request URL use the https protocol, but our server and subsequent request URL at /slack/receive are running locally, we're going to leverage ngrok to make sure everything runs smoothly. NOTE: The tunnel is created and started by the bot, but if things start acting weird, your best course of action is to restart the bot.
 
 ## Deployment
 

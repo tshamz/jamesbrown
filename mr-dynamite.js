@@ -15,11 +15,11 @@ const https                 = require('https');
 const ngrok                 = require('ngrok');
 const prompt                = require('prompt');
 const request               = require('request');
-// const localtunnel           = require('localtunnel');
 
 const AUTHENTICATED_USER  = setup.spotify.userName;
 const PLAYLIST_ID         = setup.spotify.playlistId;
 const REPORTING_CHANNEL   = setup.slack.channel;
+
 
 // Slack App =============================================
 // =======================================================
@@ -30,10 +30,10 @@ if (!setup.slack.clientId || !setup.slack.clientSecret || !setup.server.port) {
 }
 
 var controller = Botkit.slackbot({
-    interactive_replies: true,
-    json_file_store: './db_slackapp_bot/',
-    debug: false,
-    log: false
+  interactive_replies: true,
+  json_file_store: './db_slackapp_bot/',
+  debug: false,
+  log: false
 });
 
 controller.configureSlackApp({
@@ -101,54 +101,31 @@ controller.storage.teams.all(function(err, teams) {
   }
 });
 
-// Localtunnel ===========================================
+
+// ngrok =================================================
 // =======================================================
-
-var setupLocaltunnel = function(bot) {
-  var tunnel = localtunnel(setup.server.port, {subdomain: setup.server.subdomain}, function(err, tunnel) {
-    console.log('new tunnel on port: ' + setup.server.port + ' and subdomain: ' + setup.server.subdomain);
-  });
-
-  tunnel.on('error', function(err) {
-    console.log('tunnel error: ' + err);
-    tunnel.close();
-  });
-
-  tunnel.on('close', function() {
-    console.log('tunnel closed.');
-    bot.closeRTM();
-    process.exit(1);
-  });
-};
 
 var setupNgrok = function() {
   ngrok.connect({
     proto: 'http',
     addr: setup.server.port,
     // subdomain: setup.server.subdomain,
-    authtoken: '7Wmb6E7EvQQrsCZ3fkXXn_3SQF2UiuhbyRGcDnUBfh4'
+    authtoken: setup.server.ngrokToken
   }, function (err, url) {
     if (err) {
       console.log('error initializing tunnel!');
       process.exit(1);
     }
-    console.log('new tunnel: ' + url);
-  });
-
-  ngrok.once('connect', function (url) {
-    console.log('connected!');
-  });
-
-  ngrok.once('disconnect"', function (url) {
-    console.log('disconnected!');
+    console.log('New tunnel! If you haven\'t already updated your interactive messages request url, please change it to: ' + url);
   });
 
   ngrok.once('error', function (url) {
-    console.log('error!');
+    console.log('tunnel error!');
     ngrok.disconnect();
     setupNgrok();
   });
 };
+
 
 // Spotify App ===========================================
 // =======================================================
@@ -228,6 +205,7 @@ controller.on('rtm_open', function(bot) {
   });
 });
 
+
 // Watchers ==============================================
 // =======================================================
 
@@ -289,6 +267,7 @@ setInterval(function() {
     }
   });
 }, 1000);
+
 
 // Helpers ===============================================
 // =======================================================
@@ -358,6 +337,7 @@ var hotAdd = function(bot, trackInfo, user) {
     });
   });
 };
+
 
 // Listeners =============================================
 // =======================================================
@@ -519,14 +499,3 @@ controller.hears(['heysup'], 'direct_message,direct_mention,mention', function(b
   });
   bot.reply(message, 'Hello.');
 });
-
-// controller.on('rtm_close',function(bot) {
-//   console.log('** The RTM api just closed');
-//   setTimeout(function() {
-//     bot.startRTM(function(err) {
-//       if (!err) {
-//         trackBot(bot);
-//       }
-//     });
-//   }, 30000);
-// });
