@@ -5,7 +5,7 @@ module.exports = {
   addedToPlaylist: function(channelId, userName, trackInfo) {
     return {
       channel: channelId,
-      text: '*userName* just added a song to the playlist.',
+      text: `*${userName}* just added a song to the playlist.`,
       mrkdwn_in: ['text'],
       attachments: [{
         fallback: `${trackInfo.formattedTrackTitle} from the album - *${trackInfo.album}*`,
