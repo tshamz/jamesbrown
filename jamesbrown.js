@@ -43,8 +43,19 @@ controller.configureSlackApp({
 });
 
 controller.setupWebserver(setup.server.port, function(err, webserver) {
+  if (err) {
+    throw new Error(err);
+  }
+
+  console.log('** Starting webserver on port ' + setup.server.port);
+  console.log('** Serving webhook endpoints for Slash commands and outgoing webhooks at: http://MY_HOST:' + setup.server.port + '/slack/receive');
   controller.createWebhookEndpoints(controller.webserver);
+
+  console.log('** Serving app landing page at : http://MY_HOST:' + setup.server.port + '/');
   controller.createHomepageEndpoint(controller.webserver);
+
+  console.log('** Serving login URL: http://MY_HOST:' + setup.server.port + '/login');
+  console.log('** Serving oauth return endpoint: http://MY_HOST:' + setup.server.port + '/oauth');
   controller.createOauthEndpoints(controller.webserver, function(err, req, res) {
     if (err) {
       res.status(500).send('ERROR: ' + err);
@@ -52,11 +63,7 @@ controller.setupWebserver(setup.server.port, function(err, webserver) {
       res.send('Great Success!');
     }
   });
-  console.log('** Starting webserver on port ' + setup.server.port);
-  console.log('** Serving webhook endpoints for Slash commands and outgoing webhooks at: http://MY_HOST:' + setup.server.port + '/slack/receive');
-  console.log('** Serving app landing page at : http://MY_HOST:' + setup.server.port + '/');
-  console.log('** Serving login URL: http://MY_HOST:' + setup.server.port + '/login');
-  console.log('** Serving oauth return endpoint: http://MY_HOST:' + setup.server.port + '/oauth');
+
   console.log('\nIf you haven\'t already, authorize your bot by visiting http://MY_HOST:' + setup.server.port + '/login\n');
 });
 
