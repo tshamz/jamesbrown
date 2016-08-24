@@ -60,7 +60,7 @@ You'll also want to add a bot user for the Slack app (I named mine @jamesbrown, 
 While in the project directory, run:
 
 ```sh
-node mr-dynamite.js
+node jamesbrown.js
 ```
 
 ## Built With
