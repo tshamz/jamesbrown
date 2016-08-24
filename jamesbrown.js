@@ -113,17 +113,20 @@ controller.storage.teams.all(function(err, teams) {
 // =======================================================
 
 var setupNgrok = function() {
-  ngrok.connect({
+  var ngrokOptions = {
     proto: 'http',
     addr: setup.server.port,
-    // subdomain: setup.server.subdomain,
     authtoken: setup.server.ngrokToken
-  }, function (err, url) {
+  };
+  if (typeof(setup.server.subdomain) === 'string') {
+    ngrokOptions.subdomain = setup.server.subdomain;
+  }
+  ngrok.connect(ngrokOptions, function (err, url) {
     if (err) {
       console.log('error initializing tunnel!');
       process.exit(1);
     }
-    console.log('New tunnel! If you haven\'t already updated your interactive messages request url, please change it to: ' + url);
+    console.log('New tunnel! If you haven\'t already updated your interactive messages request url, please change it to: ' + url + '/slack/receive');
   });
 
   ngrok.once('error', function (url) {
