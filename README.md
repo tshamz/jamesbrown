@@ -66,7 +66,13 @@ You'll also need to add a bot user for the slack app as well as enabling Interac
 
 ## Usage
 
-While in the project's root directory, run:
+First, run:
+
+```sh
+npm install
+```
+
+then, in order to start up the bot, from the project's root directory run:
 
 ```sh
 node jamesbrown.js
