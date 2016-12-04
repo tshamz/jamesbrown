@@ -64,9 +64,9 @@ Both the Spotify and slack apps require you to define a callback URIs when first
 
 You'll also need to add a bot user for the slack app as well as enabling Interactive Messages. Interactive Messages require your to enter a request url, which we're going to leverage ngrok for again. The request URL should look like this: `https://[YOUR SUBDOMAIN].ngrok.io/slack/receive`.
 
-## Usage
+## Running the Bot
 
-First, run:
+If you've just cloned the repository, you'll need to install project dependencies by running:
 
 ```sh
 npm install
@@ -77,6 +77,39 @@ then, in order to start up the bot, from the project's root directory run:
 ```sh
 node jamesbrown.js
 ```
+
+If this is your first time starting up the bot, you'll also need to make sure that you authorize your bot by visiting `http://localhost:3000/login` and following the steps there. Assuming the authorization is successful, that whole flow should end with you being directed to whatever URL was entered as the Spotify redirectUri property in `bot-setup.js`, along with a code attached to the end of the URL as a query string. You're gonna need to copy that code out of the URL and take it back to the terminal, where you should see a prompt to paste in the code you just copied.
+
+## Commands
+
+**REMEMBER:** If you forget any of these commands or how they need to be entered, you can always send a direct message to the bot asking for help (e.g. "*help me*", "*i need help*", or "*help!*", etc.) and he'll give you a list of of everything you can say, along with a brief description of each command.
+
+##### Basic Commands:
+
+You can direct message the bot any of the following commands:
+
+- `up next` - The bot will tell you what the next three tracks are
+- `info` - The bot will tell you information about this track
+- `detail` - The bot will tell you more information about this track
+
+##### Adding Music:
+
+If you'd like to add a track to the playlist, direct message the bot:
+
+`add [Spotify URI]` *(without the square brackets)*
+
+where `[Spotify URI]` can be one of the following:
+
+- a Spotify URI - e.g. `Spotify:track:[track id]`
+- a Spotify song link - e.g. `https://open.spotifycom/[track id]`
+
+##### Searching Music:
+
+If you'd like to search for a track to add, direct message the bot:
+
+`search [search query]` _(again, without the square brackets)_
+
+and the bot will show you the top 3 search results from Spotify. You'll then be able to either add one of the results or start over and search again.
 
 ## Built With
 
