@@ -16,9 +16,9 @@ const ngrok                 = require('ngrok');
 const prompt                = require('prompt');
 const request               = require('request');
 
-const AUTHENTICATED_USER  = setup.spotify.userName;
-const PLAYLIST_ID         = setup.spotify.playlistId;
-const REPORTING_CHANNEL   = setup.slack.channel;
+const AUTHENTICATED_USER    = setup.spotify.userName;
+const PLAYLIST_ID           = setup.spotify.playlistId;
+const REPORTING_CHANNEL     = setup.slack.channel;
 
 
 // Slack App =============================================
