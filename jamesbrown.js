@@ -16,9 +16,9 @@ const ngrok                 = require('ngrok');
 const prompt                = require('prompt');
 const request               = require('request');
 
-const AUTHENTICATED_USER  = setup.spotify.userName;
-const PLAYLIST_ID         = setup.spotify.playlistId;
-const REPORTING_CHANNEL   = setup.slack.channel;
+const AUTHENTICATED_USER    = setup.spotify.userName;
+const PLAYLIST_ID           = setup.spotify.playlistId;
+const REPORTING_CHANNEL     = setup.slack.channel;
 
 
 // Slack App =============================================
@@ -43,8 +43,19 @@ controller.configureSlackApp({
 });
 
 controller.setupWebserver(setup.server.port, function(err, webserver) {
+  if (err) {
+    throw new Error(err);
+  }
+
+  console.log('** Starting webserver on port ' + setup.server.port);
+  console.log('** Serving webhook endpoints for Slash commands and outgoing webhooks at: http://localhost:' + setup.server.port + '/slack/receive');
   controller.createWebhookEndpoints(controller.webserver);
+
+  console.log('** Serving app landing page at : http://localhost:' + setup.server.port + '/');
   controller.createHomepageEndpoint(controller.webserver);
+
+  console.log('** Serving login URL: http://localhost:' + setup.server.port + '/login');
+  console.log('** Serving oauth return endpoint: http://localhost:' + setup.server.port + '/oauth');
   controller.createOauthEndpoints(controller.webserver, function(err, req, res) {
     if (err) {
       res.status(500).send('ERROR: ' + err);
@@ -52,12 +63,8 @@ controller.setupWebserver(setup.server.port, function(err, webserver) {
       res.send('Great Success!');
     }
   });
-  console.log('** Starting webserver on port ' + setup.server.port);
-  console.log('** Serving webhook endpoints for Slash commands and outgoing webhooks at: http://MY_HOST:' + setup.server.port + '/slack/receive');
-  console.log('** Serving app landing page at : http://MY_HOST:' + setup.server.port + '/');
-  console.log('** Serving login URL: http://MY_HOST:' + setup.server.port + '/login');
-  console.log('** Serving oauth return endpoint: http://MY_HOST:' + setup.server.port + '/oauth');
-  console.log('\nIf you haven\'t already, authorize your bot by visiting http://MY_HOST:' + setup.server.port + '/login\n');
+
+  console.log('\nIf you haven\'t already, authorize your bot by visiting http://localhost:' + setup.server.port + '/login\n');
 });
 
 var _bots = {};
@@ -119,7 +126,6 @@ var setupNgrok = function() {
       console.log('error initializing tunnel!');
       process.exit(1);
     }
-    console.log('New tunnel! If you haven\'t already updated your interactive messages request url, please change it to: ' + url + '/slack/receive');
   });
 
   ngrok.once('error', function (url) {
@@ -260,7 +266,7 @@ setInterval(function() {
       checkForTrackChange();
     }
     else {
-      if(lastTrackId !== null) {
+      if(lastTrackId !== null && REPORTING_CHANNEL) {
         bot.say({
           text: 'Oh no! Where did Spotify go? It doesn\'t seem to be running 😨',
           channel: REPORTING_CHANNEL
@@ -377,9 +383,11 @@ controller.on('interactive_message_callback', function(bot, message) {
             bot.replyInteractive(message, 'Moving ' + trackInfo.formattedTrackTitle + ' to the top of the queue.');
             reorderPlaylist(trackInfo, trackPosition, currentTrackPosition);
           } else {
-            bot.replyInteractive(message, trackInfo.formattedTrackTitle + ' added to playlist.');
-            bot.say(responses.addedToPlaylist(REPORTING_CHANNEL, userName, trackInfo));
             addTrack(trackInfo, currentTrackPosition);
+            bot.replyInteractive(message, trackInfo.formattedTrackTitle + ' added to playlist.');
+            if (REPORTING_CHANNEL) {
+              bot.say(responses.addedToPlaylist(REPORTING_CHANNEL, userName, trackInfo));
+            }
           }
         });
       });

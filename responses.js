@@ -21,14 +21,14 @@ module.exports = {
                  '*info* - _I\'ll tell you about this track_\n' +
                  '*detail* - _I\'ll tell you more about this track_';
     var add = 'If you\'d like to add a track to the queue, direct message me:\n\n' +
-              '\t`add [Spotify URI]` _(without the square brackes)\n\n' +
+              '\t`add [Spotify URI]` _(without the square brackets)_\n\n' +
               'where `[Spotify URI]` can be one of the following:\n\n' +
               '\t• a Spotify URI - e.g. Spotify:track:*[track id]*\n' +
               '\t• a Spotify song link - e.g. https://open.Spotifycom/ *[track id]*';
     var search = 'If you\'d like to search for a track to add, direct message:\n\n' +
                  '\t`search [search query]` _(again, without the square brackets)_\n\n' +
                  'and I\'ll show you the top 3 results from Spotify. You\'ll then be able to either add one of the results or start over and search again.';
-    var protip = '*PROTIP:* right click on a track in Spotify to copy either a song URI or link';
+    var protip = 'PROTIP: right click on a track in Spotify to copy either a song URI or link';
     return {
       attachments: [{
         title: 'Commands',
