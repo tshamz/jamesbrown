@@ -34,17 +34,20 @@ module.exports = {
         title: 'Commands',
         fallback: canSay,
         text: canSay,
+        color: '#23CF5F',
         mrkdwn_in: ['text']
       }, {
         title: 'Adding Music:',
         fallback: add,
         text: add,
+        color: '#23CF5F',
         footer: protip,
         mrkdwn_in: ['text', 'footer']
       }, {
         title: 'Searching Music:',
         fallback: search,
         text: search,
+        color: '#23CF5F',
         mrkdwn_in: ['text']
       }]
     };
