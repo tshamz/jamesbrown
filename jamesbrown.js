@@ -323,7 +323,7 @@ var reorderPlaylist = function(trackInfo, trackPosition, currentTrackPosition) {
 };
 
 var addTrack = function(trackInfo, currentTrackPosition) {
-  spotifyApi.addTracksToPlaylist(AUTHENTICATED_USER, PLAYLIST_ID, 'spotify:track:' + trackInfo.trackId, {position: currentTrackPosition + 1});
+  spotifyApi.addTracksToPlaylist(AUTHENTICATED_USER, PLAYLIST_ID, ['spotify:track:' + trackInfo.trackId], {position: currentTrackPosition + 1});
 };
 
 var hotAdd = function(bot, trackInfo, user) {
