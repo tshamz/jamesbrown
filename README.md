@@ -1,7 +1,7 @@
 # jamesbrown.js
 
 <p align="center">
-  <img width="100%" src="http://www-tc.pbs.org/wnet/americanmasters/files/2008/10/610_jamesbrown_soulsurvivor.jpg" />
+  <img width="100%" src="https://media.gq-magazine.co.uk/photos/5ea1b3641027960008de3b64/16:9/w_2240,c_limit/20200422-brown-10.jpg" />
 </p>
 
 >jamesbrown is a slackbot who can search and add songs to a specific Spotify playlist of your choosing, all from the comfort of your team's slack instance. We use him to facilitate selecting songs for playing music in our office.
